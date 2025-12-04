@@ -42,7 +42,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.0</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.1</span></h1>
             </div>
             <div id="auth-container" class="text-xs">
                  <button id="btn-login" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1 rounded border border-slate-600 transition-colors flex items-center gap-2">
@@ -82,12 +82,29 @@
             </div>
 
             <form id="goals-form" class="space-y-4">
+                <!-- User Profile -->
                 <div>
                     <label class="text-xs text-gray-400 uppercase font-bold">Peso Corporal (kg)</label>
                     <input type="number" id="user-weight" step="0.1" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:border-cyan-500 outline-none font-mono" placeholder="Ex: 93.0">
                     <p class="text-[10px] text-gray-500 mt-1">Base para cálculo de 2.5g a 3.0g de proteína.</p>
                 </div>
 
+                <!-- Custom Whey Config -->
+                <div class="border-t border-slate-700/50 pt-3 mt-2 bg-slate-800/30 p-3 rounded-lg">
+                    <label class="text-xs text-cyan-400 uppercase font-bold mb-2 block"><i class="fa-solid fa-flask mr-1"></i> Configuração do Whey</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="text-[10px] text-gray-400">Tamanho da Dose (g)</label>
+                            <input type="number" id="whey-dose" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-xs" placeholder="Ex: 30">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-gray-400">Proteína na Dose (g)</label>
+                            <input type="number" id="whey-prot" class="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white text-xs font-bold text-green-500" placeholder="Ex: 24">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Macros -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="text-xs text-gray-400">Calorias (kcal)</label>
@@ -183,7 +200,7 @@
         <section class="glass-panel rounded-xl p-4 shadow-lg">
             <h2 class="text-gray-400 text-xs uppercase font-bold tracking-widest mb-3">Input de Refeição</h2>
             <div class="relative">
-                <textarea id="meal-input" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all resize-none font-mono text-sm" placeholder="Digite aqui... Ex:&#10;5 colheres de arroz&#10;2 bifes medios&#10;3 ovos&#10;Monster zero"></textarea>
+                <textarea id="meal-input" rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 outline-none transition-all resize-none font-mono text-sm" placeholder="Digite aqui... Ex:&#10;5 colheres de arroz&#10;2 bifes medios&#10;3 ovos&#10;Whey 40g"></textarea>
                 <div class="absolute bottom-3 right-3">
                     <button id="btn-calculate" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white p-3 rounded-full shadow-lg transform hover:scale-105 transition-all w-12 h-12 flex items-center justify-center">
                         <i class="fa-solid fa-calculator"></i>
@@ -248,7 +265,6 @@
 
         // --- DATABASE DE ALIMENTOS (Padronizado Dr. Carlos) ---
         // Macros por 100g.
-        // Adicionada tabela de conversão (gramsPerUnit) para medidas caseiras
         const foodDatabase = {
             "arroz": { c: 28, p: 2.5, f: 0.2, kcal: 130, unit: "Arroz Branco (Cozido)", approx: { colher: 25, escumadeira: 80, xicara: 150 } },
             "arroz integral": { c: 26, p: 2.6, f: 1, kcal: 124, unit: "Arroz Integral (Cozido)", approx: { colher: 25, escumadeira: 80 } },
@@ -264,7 +280,7 @@
             "banana": { c: 23, p: 1, f: 0.3, kcal: 89, unit: "Banana Prata", approx: { unidade: 80, media: 80 } },
             "batata": { c: 17, p: 2, f: 0, kcal: 77, unit: "Batata Inglesa (Cozida)", approx: { colher: 30, unidade: 150 } },
             "batata doce": { c: 20, p: 1.6, f: 0.5, kcal: 86, unit: "Batata Doce (Cozida)", approx: { colher: 30, unidade: 150, rodelas: 40 } },
-            "whey": { c: 3, p: 24, f: 1, kcal: 120, unit: "Whey Protein (Dose)", approx: { scoop: 30, dose: 30, colher: 15 } },
+            "whey": { c: 3, p: 24, f: 1, kcal: 120, unit: "Whey Protein (Dose Padrão)", approx: { scoop: 30, dose: 30, colher: 15 } },
             "monster": { c: 2, p: 0, f: 0, kcal: 10, unit: "Monster Zero (Lata)", approx: { lata: 1, unidade: 1 } },
             "monster zero": { c: 2, p: 0, f: 0, kcal: 10, unit: "Monster Zero (Lata)", approx: { lata: 1, unidade: 1 } },
             "pao": { c: 49, p: 9, f: 3, kcal: 265, unit: "Pão Francês", approx: { unidade: 50 } },
@@ -299,7 +315,7 @@
         const db = getFirestore(app);
 
         let currentUser = null;
-        let userSettings = { cals: 2100, prot: 240, carb: 180, fat: 45, weight: 93 }; // Default Dr Carlos Massacre
+        let userSettings = { cals: 2100, prot: 240, carb: 180, fat: 45, weight: 93, wheyDose: 30, wheyProt: 24 }; 
         let dailyLog = { items: [], total: { cals: 0, prot: 0, carb: 0, fat: 0 } };
         let tempMealAnalysis = null;
         let unsubscribeSettings = null;
@@ -350,7 +366,6 @@
 
         // --- PRESETS DR CARLOS ---
         window.applyPreset = (type) => {
-            // Hardcoded values based on Dr Carlos Guidelines
             const presets = {
                 'A': { cals: 2100, prot: 240, carb: 180, fat: 45 }, // Massacre
                 'B': { cals: 1750, prot: 260, carb: 60, fat: 55 }  // Vacuo
@@ -362,13 +377,12 @@
             document.getElementById('goal-carb').value = p.carb;
             document.getElementById('goal-fat').value = p.fat;
             
-            // Visual feedback
             alert(`Preset ${type === 'A' ? 'MASSACRE' : 'VÁCUO'} carregado. Clique em salvar.`);
         };
 
         // --- DATABASE OPS ---
         function resetUIState() {
-             userSettings = { cals: 2100, prot: 240, carb: 180, fat: 45, weight: 93 };
+             userSettings = { cals: 2100, prot: 240, carb: 180, fat: 45, weight: 93, wheyDose: 30, wheyProt: 24 };
              dailyLog = { items: [], total: { cals: 0, prot: 0, carb: 0, fat: 0 } };
              updateUIInputs();
              updateDashboard();
@@ -383,8 +397,8 @@
             
             unsubscribeSettings = onSnapshot(docRef, (docSnap) => {
                 if (docSnap.exists()) {
-                    userSettings = docSnap.data();
-                    if (!userSettings.weight) userSettings.weight = 93; // Default fallback
+                    const data = docSnap.data();
+                    userSettings = { ...userSettings, ...data }; // Merge defaults
                     updateUIInputs();
                     updateDashboard();
                     document.getElementById('goals-section').classList.add('hidden');
@@ -400,6 +414,8 @@
 
             const newSettings = {
                 weight: Number(document.getElementById('user-weight').value) || 93,
+                wheyDose: Number(document.getElementById('whey-dose').value) || 30,
+                wheyProt: Number(document.getElementById('whey-prot').value) || 24,
                 cals: Number(document.getElementById('goal-cals').value),
                 prot: Number(document.getElementById('goal-prot').value),
                 carb: Number(document.getElementById('goal-carb').value),
@@ -480,7 +496,7 @@
             await setDoc(docRef, { items: [], total: { cals: 0, prot: 0, carb: 0, fat: 0 }});
         }
 
-        // --- NEW PARSER (DR CARLOS UNITS) ---
+        // --- NEW PARSER (DR CARLOS UNITS & WHEY CONFIG) ---
 
         function parseInput(text) {
             const lines = text.split('\n');
@@ -493,16 +509,10 @@
                 line = line.trim();
                 if (!line) return;
                 
-                // Header detection
                 if (index === 0 && !/\d/.test(line)) {
                     mealName = line;
                     return;
                 }
-
-                // Logic:
-                // 1. Check for specific unit keywords first (colher, concha, bife, pedaco)
-                // 2. If found, find the matching food in DB and use approx multiplier.
-                // 3. If no unit, assume grams if number is large (>10) or quantity=1 if small (<10) and item is discrete.
                 
                 let qtd = 0;
                 let foodName = "";
@@ -511,7 +521,6 @@
                 let multiplier = 0;
                 let wasApprox = false;
 
-                // Regex for approximate units
                 const approxRegex = /(\d+)\s*(colheres?|conchas?|bifes?|fatias?|pedacos?|latas?|scoops?|unidades?|ovos?)/i;
                 const gramRegex = /(\d+)\s*(g|ml)?/i;
                 
@@ -521,7 +530,6 @@
                 if (approxMatch) {
                     qtd = parseInt(approxMatch[1]);
                     let unitRaw = approxMatch[2].toLowerCase();
-                    // normalize unit names (remove plural)
                     if(unitRaw.startsWith('colher')) unitUsed = 'colher';
                     else if(unitRaw.startsWith('concha')) unitUsed = 'concha';
                     else if(unitRaw.startsWith('bife')) unitUsed = 'bife';
@@ -539,7 +547,6 @@
                     unitUsed = 'g';
                     foodName = line.replace(gramMatch[0], "").replace(" de ", " ").trim().toLowerCase();
                 } else {
-                    // Fallback logic
                     foodName = line.toLowerCase();
                     qtd = 1; 
                 }
@@ -556,63 +563,94 @@
                 }
 
                 if (matchedItem) {
-                    // Calculate Multiplier
-                    if (wasApprox) {
-                        isApproximate = true;
-                        // Check if item has conversion for this unit
-                        if (matchedItem.approx && matchedItem.approx[unitUsed]) {
-                            const gramsPerUnit = matchedItem.approx[unitUsed];
-                            const totalGrams = qtd * gramsPerUnit;
-                            multiplier = totalGrams / 100;
-                            // Update display name
-                            unitUsed = `${unitUsed} (~${gramsPerUnit}g)`;
-                        } else if (matchedItem.approx && matchedItem.approx['unidade']) {
-                             // Fallback to unit
-                             const gramsPerUnit = matchedItem.approx['unidade'];
-                             multiplier = (qtd * gramsPerUnit) / 100;
-                             unitUsed = `unidade estim. (~${gramsPerUnit}g)`;
+                    // --- WHEY PROTEIN SPECIAL LOGIC ---
+                    if (dbKeyMatched.includes('whey')) {
+                        // User Config
+                        const customDose = userSettings.wheyDose || 30;
+                        const customProt = userSettings.wheyProt || 24;
+                        const pRatio = customProt / customDose;
+                        
+                        // Approx Calories for Whey (Usually ~4kcal/g of protein + small leftover)
+                        // Or we can scale database kcal/100g. 
+                        // Database whey is ~400kcal/100g (standard powder). 
+                        // Let's use database values for non-protein macros scaled by weight, but OVERRIDE protein.
+                        
+                        let weightInGrams = 0;
+                        
+                        if (wasApprox) {
+                            isApproximate = true;
+                            // Check if unit is scoop or colher
+                            if(matchedItem.approx && matchedItem.approx[unitUsed]) {
+                                weightInGrams = qtd * matchedItem.approx[unitUsed];
+                                unitUsed = `${unitUsed} (~${weightInGrams}g)`;
+                            } else {
+                                weightInGrams = qtd * 30; // default scoop assumption
+                                unitUsed = "scoop/dose est. (30g)";
+                            }
                         } else {
-                             // Extreme fallback (guess 50g)
-                             multiplier = (qtd * 50) / 100;
-                             unitUsed = "unidade (estimado)";
+                            // Direct grams (e.g. "40g whey")
+                            weightInGrams = qtd;
                         }
-                    } else {
-                        // It is Grams or discrete unit like "Lata" which we treat as 1 unit = full macros if logic dictates, 
-                        // but here our DB has macros per 100g or per unit logic.
-                        // Let's stick to: if item unit says "Lata" and input was 1, and we didn't trigger approx match, 
-                        // we might have issue. But "Monster" logic in V1 handled this.
-                        // Simplification: If unit is 'g', mult = qtd/100.
-                        // If item is 'Lata' (Monster), DB macros should be per unit or we adjust.
-                        // In V2 DB, Monster macros are per 100ml usually or we set unit=1.
-                        // To keep simple: Monster in DB V2 has macros defined as "10". 
-                        // Let's assume input "200g" works.
-                        if (matchedItem.unit.includes("Lata") || matchedItem.unit.includes("unidade") && qtd < 10) {
-                             multiplier = qtd; // user typed "1 monster" (parsed as 1g? No, handled above).
-                             // If user typed "1 Monster", gramRegex found "1". unitUsed='g'.
-                             // We fix here.
-                             multiplier = qtd; 
+
+                        // Calculate Macros based on custom protein config
+                        const p = Math.round(weightInGrams * pRatio);
+                        
+                        // For C and F, assume standard ratios from DB (per 100g) scaled to weight
+                        const c = Math.round((matchedItem.c / 100) * weightInGrams);
+                        const f = Math.round((matchedItem.f / 100) * weightInGrams);
+                        // Kcal = P*4 + C*4 + F*9 approx
+                        const kcal = (p * 4) + (c * 4) + (f * 9);
+
+                        totals.p += p; totals.c += c; totals.f += f; totals.kcal += kcal;
+
+                        detectedFoods.push({
+                            name: matchedItem.unit,
+                            rawName: foodName,
+                            qtd: qtd,
+                            unitDisplay: unitUsed,
+                            macros: { p, c, f, kcal }
+                        });
+                    } 
+                    else {
+                        // --- STANDARD LOGIC ---
+                        if (wasApprox) {
+                            isApproximate = true;
+                            if (matchedItem.approx && matchedItem.approx[unitUsed]) {
+                                const gramsPerUnit = matchedItem.approx[unitUsed];
+                                const totalGrams = qtd * gramsPerUnit;
+                                multiplier = totalGrams / 100;
+                                unitUsed = `${unitUsed} (~${gramsPerUnit}g)`;
+                            } else if (matchedItem.approx && matchedItem.approx['unidade']) {
+                                const gramsPerUnit = matchedItem.approx['unidade'];
+                                multiplier = (qtd * gramsPerUnit) / 100;
+                                unitUsed = `unidade estim. (~${gramsPerUnit}g)`;
+                            } else {
+                                multiplier = (qtd * 50) / 100;
+                                unitUsed = "unidade (estimado)";
+                            }
                         } else {
-                             multiplier = qtd / 100;
+                            if (matchedItem.unit.includes("Lata") || matchedItem.unit.includes("unidade") && qtd < 10) {
+                                multiplier = qtd; 
+                            } else {
+                                multiplier = qtd / 100;
+                            }
                         }
+
+                        const p = Math.round(matchedItem.p * multiplier);
+                        const c = Math.round(matchedItem.c * multiplier);
+                        const f = Math.round(matchedItem.f * multiplier);
+                        const kcal = Math.round(matchedItem.kcal * multiplier);
+
+                        totals.p += p; totals.c += c; totals.f += f; totals.kcal += kcal;
+
+                        detectedFoods.push({
+                            name: matchedItem.unit,
+                            rawName: foodName,
+                            qtd: qtd,
+                            unitDisplay: unitUsed,
+                            macros: { p, c, f, kcal }
+                        });
                     }
-
-                    const p = Math.round(matchedItem.p * multiplier);
-                    const c = Math.round(matchedItem.c * multiplier);
-                    const f = Math.round(matchedItem.f * multiplier);
-                    const kcal = Math.round(matchedItem.kcal * multiplier);
-
-                    totals.p += p;
-                    totals.c += c;
-                    totals.f += f;
-                    totals.kcal += kcal;
-
-                    detectedFoods.push({
-                        name: matchedItem.unit,
-                        rawName: foodName,
-                        qtd: qtd,
-                        unitDisplay: unitUsed,
-                        macros: { p, c, f, kcal }
-                    });
                 } else {
                      detectedFoods.push({
                         name: "Desconhecido (" + line + ")",
@@ -634,16 +672,13 @@
 
             tempMealAnalysis = parseInput(text);
             
-            // UI Building
             const container = document.getElementById('modal-content');
             container.innerHTML = '';
 
-            // Warning Display
             const warningEl = document.getElementById('accuracy-warning');
             if (tempMealAnalysis.isApproximate) warningEl.classList.remove('hidden');
             else warningEl.classList.add('hidden');
 
-            // Header
             const header = document.createElement('div');
             header.className = "bg-slate-900 rounded p-3 mb-4 text-center border border-slate-700";
             header.innerHTML = `
@@ -660,7 +695,6 @@
             tempMealAnalysis.foods.forEach(item => {
                 const row = document.createElement('div');
                 row.className = "flex justify-between items-center py-2 border-b border-slate-700 last:border-0";
-                
                 if (item.error) {
                     row.innerHTML = `<div class="text-red-400"><i class="fa-solid fa-triangle-exclamation mr-2"></i>${item.rawName} <span class="text-xs opacity-70">(Não encontrado)</span></div>`;
                 } else {
@@ -676,18 +710,17 @@
                                 <span class="text-blue-600">C:${item.macros.c}</span>
                                 <span class="text-yellow-600">G:${item.macros.f}</span>
                             </div>
-                        </div>
-                    `;
+                        </div>`;
                 }
                 container.appendChild(row);
             });
-
             document.getElementById('modal-result').classList.remove('hidden');
         }
 
-        // --- UI UPDATES ---
         function updateUIInputs() {
             document.getElementById('user-weight').value = userSettings.weight;
+            document.getElementById('whey-dose').value = userSettings.wheyDose;
+            document.getElementById('whey-prot').value = userSettings.wheyProt;
             document.getElementById('goal-cals').value = userSettings.cals;
             document.getElementById('goal-prot').value = userSettings.prot;
             document.getElementById('goal-carb').value = userSettings.carb;
@@ -722,76 +755,80 @@
             const el = document.getElementById(id);
             if (id === 'bar-cals') el.style.width = `${pct}%`;
             else el.style.height = `${pct}%`;
-            
-            if (val > max) el.classList.add('bg-red-500'); 
-            else el.classList.remove('bg-red-500');
+            if (val > max) el.classList.add('bg-red-500'); else el.classList.remove('bg-red-500');
         }
 
         function renderLogs() {
             const container = document.getElementById('logs-container');
             container.innerHTML = '';
-            
             if (!dailyLog.items || dailyLog.items.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-600 py-4 italic text-sm">Nenhuma refeição hoje.</div>';
                 return;
             }
-
             dailyLog.items.slice().reverse().forEach(log => {
                 const el = document.createElement('div');
-                // Highlight approximate logs
                 const borderClass = log.isApproximate ? 'border-yellow-500' : 'border-cyan-500';
                 const bgClass = log.isApproximate ? 'bg-yellow-900/10' : 'bg-slate-800/50';
-
                 el.className = `${bgClass} rounded-lg p-3 border-l-2 ${borderClass} flex justify-between items-center`;
-                
                 const foodDesc = log.foods.map(f => f.name.split(' ')[0]).join(', ');
-                
                 el.innerHTML = `
-                    <div>
-                        <div class="text-sm font-bold text-gray-200">${log.name} ${log.isApproximate ? '<i class="fa-solid fa-triangle-exclamation text-yellow-500 text-[10px]" title="Aproximado"></i>' : ''}</div>
-                        <div class="text-xs text-gray-500 truncate w-40">${foodDesc}</div>
-                    </div>
-                    <div class="text-right">
-                        <div class="text-sm font-bold text-white">${log.totals.kcal} kcal</div>
-                        <div class="text-[10px] text-gray-400 flex gap-2 font-mono">
-                            <span class="text-green-500">P:${log.totals.p}</span>
-                            <span class="text-blue-500">C:${log.totals.c}</span>
-                            <span class="text-yellow-500">G:${log.totals.f}</span>
-                        </div>
-                    </div>
-                `;
+                    <div><div class="text-sm font-bold text-gray-200">${log.name} ${log.isApproximate ? '<i class="fa-solid fa-triangle-exclamation text-yellow-500 text-[10px]" title="Aproximado"></i>' : ''}</div><div class="text-xs text-gray-500 truncate w-40">${foodDesc}</div></div>
+                    <div class="text-right"><div class="text-sm font-bold text-white">${log.totals.kcal} kcal</div><div class="text-[10px] text-gray-400 flex gap-2 font-mono"><span class="text-green-500">P:${log.totals.p}</span><span class="text-blue-500">C:${log.totals.c}</span><span class="text-yellow-500">G:${log.totals.f}</span></div></div>`;
                 container.appendChild(el);
             });
         }
 
-        // --- DR CARLOS AI ---
+        // --- DR CARLOS AI (VARIÁVEL) ---
         function analyzeContext() {
             const t = dailyLog.total;
             const g = userSettings;
             const weight = g.weight || 93;
-            const minProtein = weight * 2.5; // Dr Carlos rule
+            const minProtein = weight * 2.5; 
 
             const box = document.getElementById('suggestion-box');
             const txt = document.getElementById('suggestion-text');
-
             box.classList.remove('hidden');
 
             const pctKcal = t.cals / g.cals;
+            
+            // Phrases DB
+            const phrases = {
+                catabolic: [
+                    "<b>ALERTA DE CATABOLISMO!</b> A proteína está baixa. O músculo não cresce com ar. Mande Whey ou Ovos agora.",
+                    "Você está brincando de fazer dieta? Proteína ridícula. Corrija isso antes de dormir ou perderá massa.",
+                    "Seu corpo está implorando por aminoácidos. A síntese proteica parou. Coma proteína IMEDIATAMENTE."
+                ],
+                overLimit: [
+                    "Meta calórica estourada. Pare de comer. O GH age no sono, não na digestão pesada.",
+                    "Você já passou do limite. Beba 1 litro de água e vá dormir. Amanhã o cardio será dobrado.",
+                    "Chega por hoje. Seu saldo acabou. Não transforme superávit em gordura visceral."
+                ],
+                massacreNeedCarb: [
+                    "Hoje é dia de <b>MASSACRE</b> e seu carbo está baixo. O treino vai falhar sem glicogênio. Carregue agora.",
+                    "Sem carbo, sem força. É dia de perna/costas? Coma arroz ou batata já.",
+                    "A insulina precisa subir pro treino render. O tanque está vazio. Encha de carbo limpo."
+                ],
+                onTrack: [
+                    `Protocolo em andamento. Você tem <b>${g.cals - t.cals} kcal</b> de buffer. Mantenha a disciplina.`,
+                    "Segue o plano. A constância é o segredo. Não erra.",
+                    "Engenharia metabólica funcionando. Tudo dentro dos parâmetros. Continue focado."
+                ]
+            };
 
-            // DR CARLOS LOGIC TREE
+            const getRandom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+            // Logic Tree
             if (t.prot < minProtein && pctKcal > 0.8) {
-                txt.innerHTML = `<span class="text-red-400 font-bold">ALERTA DE CATABOLISMO!</span> Você está quase sem calorias e a proteína está baixa (${t.prot}g). O mínimo para síntese aumentada é ${Math.round(minProtein)}g. Mande Clara de Ovo ou Whey AGORA.`;
+                txt.innerHTML = getRandom(phrases.catabolic);
                 box.className = "bg-red-900/30 border-l-4 border-red-500 p-3 rounded text-sm text-red-200";
             } else if (pctKcal > 1.05) {
-                txt.innerHTML = "Meta calórica estourada. Pare de comer. Hidrate-se. O GH age no sono, não na digestão.";
+                txt.innerHTML = getRandom(phrases.overLimit);
                 box.className = "bg-red-900/30 border-l-4 border-red-500 p-3 rounded text-sm text-red-200";
             } else if (g.carb > 150 && t.carb < 50 && pctKcal > 0.4) {
-                 // High carb day but low intake
-                 txt.innerHTML = "Hoje é dia de <b>MASSACRE (High Carb)</b>. Seu glicogênio está vazio. Carregue o arroz ou batata na próxima refeição ou o treino vai falhar.";
+                 txt.innerHTML = getRandom(phrases.massacreNeedCarb);
                  box.className = "bg-blue-900/30 border-l-4 border-blue-500 p-3 rounded text-sm text-blue-200";
             } else {
-                 const remainingCals = g.cals - t.cals;
-                 txt.innerHTML = `Protocolo em andamento. Você tem <b>${remainingCals} kcal</b> de buffer. Mantenha a disciplina.`;
+                 txt.innerHTML = getRandom(phrases.onTrack);
                  box.className = "bg-slate-800/50 border-l-4 border-cyan-500 p-3 rounded text-sm text-gray-300";
             }
         }
