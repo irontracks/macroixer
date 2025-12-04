@@ -43,7 +43,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.4</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.5</span></h1>
             </div>
             <div id="auth-container" class="text-xs">
                  <div id="loading-status" class="text-gray-400 flex items-center gap-2">
@@ -468,41 +468,73 @@
         let notificationSettings = { breakfast: { time: '08:00', enabled: false }, lunch: { time: '12:00', enabled: false }, dinner: { time: '19:00', enabled: false } };
         let notificationIntervals = [];
 
-        // --- AUTH SIMPLIFICADO ---
-        let useLocalStorage = false; // Modo offline
+        // --- AUTH SYSTEM REFATORADO v2.5 ---
+        let useLocalStorage = false;
 
-        const enableOfflineMode = () => {
-            console.log('🟡 Ativando modo offline...');
-            useLocalStorage = true;
-            localStorage.setItem('macromixer_offline_mode', 'true');
-            currentUser = { uid: 'local-user', displayName: 'Modo Offline' };
+        // Função para esconder loading e mostrar UI
+        function showUserInterface(displayName, isOffline = false) {
+            console.log(`Mostrando interface para: ${displayName}`);
             
             // Esconde loading
             const loadingEl = document.getElementById('loading-status');
             if (loadingEl) loadingEl.classList.add('hidden');
             
-            // Esconde botão de login
+            // Esconde botão login
             const btnLogin = document.getElementById('btn-login');
             if (btnLogin) btnLogin.classList.add('hidden');
             
-            // Mostra status
+            // Mostra status do usuário
             const userStatus = document.getElementById('user-status');
-            userStatus.classList.remove('hidden');
-            userStatus.classList.add('flex');
-            document.getElementById('username-display').innerText = "Modo Offline";
-            document.getElementById('connection-dot').classList.remove('bg-green-500');
-            document.getElementById('connection-dot').classList.add('bg-yellow-500');
+            if (userStatus) {
+                userStatus.classList.remove('hidden');
+                userStatus.classList.add('flex');
+            }
             
-            loadUserSettingsLocal();
-            loadDailyLogLocal();
-            loadNotificationSettingsLocal();
-            console.log('✅ Modo offline ativado!');
-        };
+            // Atualiza nome e cor do dot
+            const usernameEl = document.getElementById('username-display');
+            if (usernameEl) usernameEl.innerText = displayName;
+            
+            const dotEl = document.getElementById('connection-dot');
+            if (dotEl) {
+                if (isOffline) {
+                    dotEl.classList.remove('bg-green-500');
+                    dotEl.classList.add('bg-yellow-500');
+                } else {
+                    dotEl.classList.remove('bg-yellow-500');
+                    dotEl.classList.add('bg-green-500');
+                }
+            }
+            
+            console.log('✅ Interface mostrada com sucesso');
+        }
 
+        // Modo Offline
+        function enableOfflineMode() {
+            console.log('🟡 Ativando modo offline...');
+            useLocalStorage = true;
+            localStorage.setItem('macromixer_offline_mode', 'true');
+            currentUser = { uid: 'local-user', displayName: 'Modo Offline' };
+            
+            showUserInterface('Modo Offline', true);
+            
+            try {
+                loadUserSettingsLocal();
+                loadDailyLogLocal();
+                loadNotificationSettingsLocal();
+                console.log('✅ Modo offline ativado completamente!');
+            } catch (error) {
+                console.error('Erro ao carregar dados locais:', error);
+                // Continua mesmo com erro
+            }
+        }
+
+        // Handler de Login
         const handleLogin = async () => {
+            console.log('Botão de login clicado');
             enableOfflineMode();
         };
 
+        // Handler de Logout
         const handleLogout = async () => {
             if (useLocalStorage) {
                 if (confirm("Deseja limpar todos os dados salvos localmente?")) {
@@ -510,28 +542,77 @@
                     location.reload();
                 }
             } else {
-                try { await signOut(auth); location.reload(); } catch (error) { console.error(error); }
+                try {
+                    await signOut(auth);
+                    location.reload();
+                } catch (error) {
+                    console.error(error);
+                }
             }
         };
 
-        const initAuth = async () => {
-            console.log('=== INICIANDO AUTH v2.4 ===');
+        // Listener de mudança de autenticação do Firebase
+        onAuthStateChanged(auth, (user) => {
+            console.log('=== onAuthStateChanged disparado ===');
+            console.log('User:', user);
             
-            // Verifica se já está em modo offline
+            if (user) {
+                console.log('✅ Usuário Firebase autenticado:', user.uid);
+                currentUser = user;
+                useLocalStorage = false;
+                localStorage.removeItem('macromixer_offline_mode');
+                
+                showUserInterface(user.displayName || 'Visitante', false);
+                
+                loadUserSettings();
+                loadDailyLog();
+            } else {
+                console.log('❌ Nenhum usuário Firebase - verificando modo offline...');
+                
+                // Se não tem usuário Firebase, verifica se deve ativar offline
+                if (localStorage.getItem('macromixer_offline_mode') === 'true') {
+                    console.log('Modo offline já estava ativo');
+                    enableOfflineMode();
+                } else {
+                    console.log('Mostrando botão de login');
+                    // Esconde loading
+                    const loadingEl = document.getElementById('loading-status');
+                    if (loadingEl) loadingEl.classList.add('hidden');
+                    
+                    // Mostra botão de login
+                    const btnLogin = document.getElementById('btn-login');
+                    if (btnLogin) {
+                        btnLogin.classList.remove('hidden');
+                        btnLogin.classList.add('flex');
+                    }
+                }
+            }
+        });
+
+        // Inicialização da Autenticação
+        async function initAuth() {
+            console.log('=== INICIANDO AUTH v2.5 ===');
+            console.log('URL:', window.location.href);
+            
+            // Verifica se já tem modo offline salvo
             if (localStorage.getItem('macromixer_offline_mode') === 'true') {
-                console.log('Modo offline salvo - ativando...');
+                console.log('Modo offline detectado - ativando...');
                 enableOfflineMode();
                 return;
             }
             
-            // SEMPRE ativa modo offline por padrão
-            console.log('Ativando modo offline por padrão...');
-            setTimeout(() => {
+            // Tenta login anônimo no Firebase
+            console.log('Tentando login anônimo no Firebase...');
+            try {
+                await signInAnonymously(auth);
+                console.log('✅ Login anônimo bem-sucedido!');
+                // onAuthStateChanged vai lidar com o resto
+            } catch (error) {
+                console.error('❌ Erro no login Firebase:', error);
+                console.log('Ativando modo offline como fallback...');
                 enableOfflineMode();
-            }, 500);
-        };
-
-        // Remove onAuthStateChanged - não precisa mais
+            }
+        }
 
         // --- PRESETS DR CARLOS ---
         window.applyPreset = (type) => {
