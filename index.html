@@ -43,12 +43,16 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v1.0</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v1.1</span></h1>
             </div>
             <div id="auth-container" class="text-xs">
-                <div id="user-status" class="text-gray-400 flex items-center gap-2">
-                    <div class="w-2 h-2 bg-cyan-500 rounded-full animate-pulse" id="connection-dot"></div>
-                    <span id="username-display">Modo Local</span>
+                <button id="btn-login" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1 rounded border border-slate-600 transition-colors flex items-center gap-2">
+                    <i class="fa-brands fa-google"></i> Entrar
+                </button>
+                <div id="user-status" class="hidden text-gray-400 flex items-center gap-2">
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse" id="connection-dot"></div>
+                    <span id="username-display">Online</span>
+                    <button id="btn-logout" class="ml-2 text-slate-500 hover:text-white" title="Sair"><i class="fa-solid fa-sign-out-alt"></i></button>
                 </div>
             </div>
         </div>
@@ -333,8 +337,12 @@
         </div>
     </div>
 
-    <!-- JavaScript -->
-    <script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // --- DATABASE DE ALIMENTOS (Padronizado Dr. Carlos) ---
         // Macros por 100g.
         const foodDatabase = {
@@ -418,11 +426,25 @@
             "leite desnatado": { c: 5, p: 3.4, f: 0.2, kcal: 35, unit: "Leite Desnatado", approx: { copo: 200, xicara: 240 } }
         };
 
-        console.log('=== MacroMixer v1.0 - Modo Local ===');
+        // --- FIREBASE SETUP ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfy01I69nNCABxnYSqK95e8TwGP1bSv2w",
+            authDomain: "irontracks-e6344.firebaseapp.com",
+            projectId: "irontracks-e6344",
+            storageBucket: "irontracks-e6344.firebasestorage.app",
+            messagingSenderId: "212508580918",
+            appId: "1:212508580918:web:dd55c3088fec86b8680c97"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+        const appId = "macromixer-prod";
         
         // Variáveis globais
-        let currentUser = { uid: 'local-user', displayName: 'Local' };
-        let useLocalStorage = true; // SEMPRE usa localStorage
+        let currentUser = null;
+        let useLocalStorage = false;
         let userSettings = { cals: 2100, prot: 240, carb: 180, fat: 45, weight: 93, wheyDose: 30, wheyProt: 24 }; 
         let dailyLog = { items: [], total: { cals: 0, prot: 0, carb: 0, fat: 0 } };
         let tempMealAnalysis = null;
@@ -431,16 +453,55 @@
         let notificationSettings = { breakfast: { time: '08:00', enabled: false }, lunch: { time: '12:00', enabled: false }, dinner: { time: '19:00', enabled: false } };
         let notificationIntervals = [];
 
-        // Inicialização Simples
+        // --- AUTH COM GOOGLE ---
+        const handleLogin = async () => {
+            try {
+                await signInWithPopup(auth, googleProvider);
+            } catch (error) {
+                console.error('Erro no login:', error);
+                alert('Erro ao fazer login. Tente novamente.');
+            }
+        };
+
+        const handleLogout = async () => {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error('Erro no logout:', error);
+            }
+        };
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                console.log('✅ Usuário logado:', user.displayName || user.email);
+                currentUser = user;
+                useLocalStorage = false;
+                
+                // Atualiza UI
+                document.getElementById('btn-login').classList.add('hidden');
+                document.getElementById('user-status').classList.remove('hidden');
+                document.getElementById('user-status').classList.add('flex');
+                document.getElementById('username-display').innerText = user.displayName || user.email || 'Usuário';
+                
+                // Carrega dados do Firebase
+                loadUserSettings();
+                loadDailyLog();
+                loadNotificationSettings();
+            } else {
+                console.log('❌ Usuário não logado');
+                currentUser = null;
+                useLocalStorage = false;
+                
+                // Atualiza UI
+                document.getElementById('btn-login').classList.remove('hidden');
+                document.getElementById('btn-login').classList.add('flex');
+                document.getElementById('user-status').classList.add('hidden');
+                document.getElementById('user-status').classList.remove('flex');
+            }
+        });
+
         function initAuth() {
-            console.log('=== MacroMixer v1.0 - Modo Local ===');
-            
-            // Carrega dados salvos
-            loadUserSettingsLocal();
-            loadDailyLogLocal();
-            loadNotificationSettingsLocal();
-            
-            console.log('✅ App pronto!');
+            console.log('=== MacroMixer v1.1 - Com Google Auth ===');
         }
 
         // --- PRESETS DR CARLOS ---
@@ -564,13 +625,27 @@
              if(unsubscribeLogs) unsubscribeLogs();
         }
 
-        // Funções simplificadas - apenas localStorage
+        // Funções com Firebase
         async function loadUserSettings() {
-            loadUserSettingsLocal();
+            if (!currentUser) return;
+            const docRef = doc(db, 'users', currentUser.uid, 'settings', 'goals');
+            
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    userSettings = { ...userSettings, ...data };
+                    updateUIInputs();
+                    updateDashboard();
+                    document.getElementById('goals-section').classList.add('hidden');
+                } else {
+                    document.getElementById('goals-section').classList.remove('hidden');
+                }
+            });
         }
 
         async function saveUserSettings(e) {
             e.preventDefault();
+            if (!currentUser) return;
 
             const newSettings = {
                 weight: Number(document.getElementById('user-weight').value) || 93,
@@ -582,7 +657,8 @@
                 fat: Number(document.getElementById('goal-fat').value)
             };
 
-            saveUserSettingsLocal(newSettings);
+            const docRef = doc(db, 'users', currentUser.uid, 'settings', 'goals');
+            await setDoc(docRef, newSettings);
             
             const btn = e.target.querySelector('button');
             const originalText = btn.innerText;
@@ -595,16 +671,27 @@
             }, 1000);
         }
 
-        // Funções simplificadas - apenas localStorage
+        // Funções com Firebase
         async function loadDailyLog() {
-            loadDailyLogLocal();
-            renderLogs();
-            updateDashboard();
-            analyzeContext();
+            if (!currentUser) return;
+            const todayStr = new Date().toISOString().split('T')[0];
+            const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
+
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    dailyLog = docSnap.data();
+                    if (!dailyLog.total) dailyLog.total = { cals: 0, prot: 0, carb: 0, fat: 0 };
+                } else {
+                    dailyLog = { items: [], total: { cals: 0, prot: 0, carb: 0, fat: 0 } };
+                }
+                renderLogs();
+                updateDashboard();
+                analyzeContext();
+            });
         }
 
         async function pushMealToDB() {
-            if (!tempMealAnalysis) return;
+            if (!currentUser || !tempMealAnalysis) return;
 
             const newTotal = {
                 cals: dailyLog.total.cals + tempMealAnalysis.totals.kcal,
@@ -621,25 +708,26 @@
                 isApproximate: tempMealAnalysis.isApproximate
             };
 
-            dailyLog.items.push(mealEntry);
-            dailyLog.total = newTotal;
-            saveDailyLogLocal();
-            renderLogs();
-            updateDashboard();
-            analyzeContext();
+            const todayStr = new Date().toISOString().split('T')[0];
+            const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
+            
+            if (dailyLog.items.length === 0) {
+                await setDoc(docRef, { items: [mealEntry], total: newTotal });
+            } else {
+                await updateDoc(docRef, { items: arrayUnion(mealEntry), total: newTotal });
+            }
                 
             document.getElementById('meal-input').value = "";
             document.getElementById('modal-result').classList.add('hidden');
         }
         
         async function resetDay() {
+            if (!currentUser) return;
             if(!confirm("Limpar todo o histórico de hoje?")) return;
             
-            dailyLog = { items: [], total: { cals: 0, prot: 0, carb: 0, fat: 0 } };
-            saveDailyLogLocal();
-            renderLogs();
-            updateDashboard();
-            analyzeContext();
+            const todayStr = new Date().toISOString().split('T')[0];
+            const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
+            await setDoc(docRef, { items: [], total: { cals: 0, prot: 0, carb: 0, fat: 0 }});
         }
 
         // --- NEW PARSER (DR CARLOS UNITS & WHEY CONFIG) ---
@@ -1178,12 +1266,25 @@
             notificationIntervals.push(interval);
         }
 
-        // Funções simplificadas - apenas localStorage
+        // Funções com Firebase
         async function loadNotificationSettings() {
-            loadNotificationSettingsLocal();
+            if (!currentUser) return;
+            const docRef = doc(db, 'users', currentUser.uid, 'settings', 'notifications');
+            
+            try {
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    notificationSettings = docSnap.data();
+                    updateNotificationUI();
+                }
+            } catch (error) {
+                console.log("Error loading notification settings", error);
+            }
         }
 
         async function saveNotificationSettings() {
+            if (!currentUser) return;
+            
             const newSettings = {
                 breakfast: {
                     time: document.getElementById('breakfast-time').value,
@@ -1199,7 +1300,10 @@
                 }
             };
             
-            saveNotificationSettingsLocal(newSettings);
+            const docRef = doc(db, 'users', currentUser.uid, 'settings', 'notifications');
+            await setDoc(docRef, newSettings);
+            notificationSettings = newSettings;
+            
             startNotificationScheduler();
             
             const btn = document.getElementById('save-notifications-btn');
@@ -1293,6 +1397,8 @@
         document.getElementById('close-modal').addEventListener('click', () => document.getElementById('modal-result').classList.add('hidden'));
         document.getElementById('confirm-meal').addEventListener('click', pushMealToDB);
         document.getElementById('reset-day-btn').addEventListener('click', resetDay);
+        document.getElementById('btn-login').addEventListener('click', handleLogin);
+        document.getElementById('btn-logout').addEventListener('click', handleLogout);
         
         // New event listeners
         document.getElementById('prev-day-btn').addEventListener('click', () => changeViewDate(-1));
