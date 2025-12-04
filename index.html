@@ -43,7 +43,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v1.1</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v1.2</span></h1>
             </div>
             <div id="auth-container" class="text-xs">
                 <button id="btn-login" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1 rounded border border-slate-600 transition-colors flex items-center gap-2">
@@ -455,11 +455,28 @@
 
         // --- AUTH COM GOOGLE ---
         const handleLogin = async () => {
+            console.log('🔵 Botão Entrar clicado!');
+            console.log('Auth object:', auth);
+            console.log('Google Provider:', googleProvider);
+            
             try {
-                await signInWithPopup(auth, googleProvider);
+                console.log('Tentando abrir popup do Google...');
+                const result = await signInWithPopup(auth, googleProvider);
+                console.log('✅ Login bem-sucedido!', result.user);
             } catch (error) {
-                console.error('Erro no login:', error);
-                alert('Erro ao fazer login. Tente novamente.');
+                console.error('❌ Erro no login:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+                
+                if (error.code === 'auth/unauthorized-domain') {
+                    alert(`⚠️ DOMÍNIO NÃO AUTORIZADO\n\nO domínio "${window.location.hostname}" não está autorizado no Firebase.\n\nPara corrigir:\n1. Acesse: console.firebase.google.com\n2. Vá em Authentication > Settings > Authorized domains\n3. Adicione: ${window.location.hostname}\n4. Salve e tente novamente`);
+                } else if (error.code === 'auth/popup-blocked') {
+                    alert('⚠️ POPUP BLOQUEADO\n\nSeu navegador bloqueou o popup de login.\nPermita popups para este site e tente novamente.');
+                } else if (error.code === 'auth/popup-closed-by-user') {
+                    console.log('Usuário fechou o popup');
+                } else {
+                    alert(`Erro ao fazer login: ${error.message}`);
+                }
             }
         };
 
@@ -472,18 +489,33 @@
         };
 
         onAuthStateChanged(auth, (user) => {
+            console.log('🔄 onAuthStateChanged disparado');
+            console.log('User:', user);
+            
             if (user) {
                 console.log('✅ Usuário logado:', user.displayName || user.email);
+                console.log('UID:', user.uid);
                 currentUser = user;
                 useLocalStorage = false;
                 
                 // Atualiza UI
-                document.getElementById('btn-login').classList.add('hidden');
-                document.getElementById('user-status').classList.remove('hidden');
-                document.getElementById('user-status').classList.add('flex');
-                document.getElementById('username-display').innerText = user.displayName || user.email || 'Usuário';
+                const btnLogin = document.getElementById('btn-login');
+                const userStatus = document.getElementById('user-status');
+                const usernameDisplay = document.getElementById('username-display');
+                
+                if (btnLogin) btnLogin.classList.add('hidden');
+                if (userStatus) {
+                    userStatus.classList.remove('hidden');
+                    userStatus.classList.add('flex');
+                }
+                if (usernameDisplay) {
+                    usernameDisplay.innerText = user.displayName || user.email || 'Usuário';
+                }
+                
+                console.log('UI atualizada - mostrando status do usuário');
                 
                 // Carrega dados do Firebase
+                console.log('Carregando dados do Firebase...');
                 loadUserSettings();
                 loadDailyLog();
                 loadNotificationSettings();
@@ -493,10 +525,19 @@
                 useLocalStorage = false;
                 
                 // Atualiza UI
-                document.getElementById('btn-login').classList.remove('hidden');
-                document.getElementById('btn-login').classList.add('flex');
-                document.getElementById('user-status').classList.add('hidden');
-                document.getElementById('user-status').classList.remove('flex');
+                const btnLogin = document.getElementById('btn-login');
+                const userStatus = document.getElementById('user-status');
+                
+                if (btnLogin) {
+                    btnLogin.classList.remove('hidden');
+                    btnLogin.classList.add('flex');
+                }
+                if (userStatus) {
+                    userStatus.classList.add('hidden');
+                    userStatus.classList.remove('flex');
+                }
+                
+                console.log('UI atualizada - mostrando botão de login');
             }
         });
 
