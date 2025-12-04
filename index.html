@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https: data: 'unsafe-inline' 'unsafe-eval'; script-src 'self' https: 'unsafe-inline' 'unsafe-eval'; style-src 'self' https: 'unsafe-inline'; img-src 'self' https: data:; connect-src 'self' https: wss:; font-src 'self' https: data:;">
     <title>MacroMixer - Dr. Carlos Edition</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
@@ -44,7 +43,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.2</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.3</span></h1>
             </div>
             <div id="auth-container" class="text-xs">
                  <div id="loading-status" class="text-gray-400 flex items-center gap-2">
@@ -569,14 +568,23 @@
                 return;
             }
             
-            // CORREÇÃO: Faz login automático para GitHub Pages
+            // CORREÇÃO: Faz login automático com timeout
             console.log('Tentando login automático...');
+            
+            // Timeout de 5 segundos
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 5000)
+            );
+            
             try {
-                await signInAnonymously(auth);
+                await Promise.race([
+                    signInAnonymously(auth),
+                    timeoutPromise
+                ]);
                 console.log('✅ Login automático bem-sucedido!');
             } catch (error) {
                 console.error('❌ Erro no login automático:', error);
-                // Se falhar, ativa modo offline automaticamente
+                // Se falhar ou timeout, ativa modo offline automaticamente
                 console.log('Ativando modo offline como fallback...');
                 enableOfflineMode();
             }
