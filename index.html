@@ -46,11 +46,11 @@
                 <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.1</span></h1>
             </div>
             <div id="auth-container" class="text-xs">
-                 <button id="btn-login" class="bg-slate-800 hover:bg-slate-700 text-white px-3 py-1 rounded border border-slate-600 transition-colors flex items-center gap-2" title="Clique para usar o app (modo offline disponível)">
+                 <button id="btn-login" class="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white px-4 py-2 rounded-lg border border-cyan-500/30 transition-all flex items-center gap-2 font-bold shadow-lg" title="Clique para começar a usar o app">
                     <i class="fa-solid fa-rocket"></i> Começar
                 </button>
                 <div id="user-status" class="hidden text-gray-400 flex items-center gap-2">
-                    <div class="w-2 h-2 bg-green-500 rounded-full" id="connection-dot"></div>
+                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse" id="connection-dot"></div>
                     <span id="username-display">Online</span>
                     <button id="btn-logout" class="ml-2 text-slate-500 hover:text-white" title="Sair"><i class="fa-solid fa-sign-out-alt"></i></button>
                 </div>
@@ -445,9 +445,11 @@
             appId = "irontracks-prod";
         }
 
+        console.log('Inicializando Firebase com config:', firebaseConfig);
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        console.log('Firebase inicializado com sucesso');
 
         let currentUser = null;
         let userSettings = { cals: 2100, prot: 240, carb: 180, fat: 45, weight: 93, wheyDose: 30, wheyProt: 24 }; 
@@ -467,13 +469,39 @@
         let useLocalStorage = false; // Modo offline
 
         const handleLogin = async () => {
+            const btn = document.getElementById('btn-login');
+            const originalHTML = btn.innerHTML;
+            
+            // Feedback visual
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
+            btn.disabled = true;
+            
+            // Tenta login anônimo primeiro (mais simples e sempre funciona)
             try { 
-                await signInWithPopup(auth, googleProvider); 
+                console.log('Tentando login anônimo...');
+                console.log('Auth object:', auth);
+                await signInAnonymously(auth);
+                console.log('Login anônimo bem-sucedido!');
             } catch (error) { 
-                console.error(error); 
+                console.error('Erro no login anônimo:', error);
+                console.error('Error code:', error.code);
+                console.error('Error message:', error.message);
+                
+                // Restaura botão
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                
+                // Verifica se é erro de domínio não autorizado
+                if (error.code === 'auth/unauthorized-domain' || error.message.includes('domain')) {
+                    const currentDomain = window.location.hostname;
+                    alert(`⚠️ CONFIGURAÇÃO NECESSÁRIA\n\nO domínio "${currentDomain}" não está autorizado no Firebase.\n\nPara corrigir:\n1. Acesse: console.firebase.google.com\n2. Vá em Authentication > Settings > Authorized domains\n3. Adicione: ${currentDomain}\n\nEnquanto isso, você pode usar o MODO OFFLINE.`);
+                }
+                
                 // Se falhar, oferece modo offline
-                if (confirm("Não foi possível conectar ao Google.\n\nDeseja usar o app em MODO OFFLINE?\n(Seus dados ficarão salvos apenas neste navegador)")) {
+                if (confirm("Não foi possível conectar ao Firebase.\n\nDeseja usar o app em MODO OFFLINE?\n(Seus dados ficarão salvos apenas neste navegador)")) {
                     enableOfflineMode();
+                } else {
+                    alert("Erro ao iniciar o app. Recarregue a página para tentar novamente.");
                 }
             }
         };
@@ -506,8 +534,14 @@
         };
 
         const initAuth = async () => {
+            console.log('=== INICIANDO AUTH ===');
+            console.log('URL atual:', window.location.href);
+            console.log('Protocol:', window.location.protocol);
+            console.log('Hostname:', window.location.hostname);
+            
             // Verifica se já está em modo offline
             if (localStorage.getItem('macromixer_offline_mode') === 'true') {
+                console.log('Modo offline já ativado anteriormente');
                 enableOfflineMode();
                 return;
             }
@@ -522,22 +556,10 @@
                 return;
             }
             
-            if (typeof __firebase_config !== 'undefined' && !auth.currentUser) {
-                try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                       await signInWithCustomToken(auth, __initial_auth_token);
-                   } else {
-                       await signInAnonymously(auth);
-                   }
-               } catch (error) { 
-                   console.error(error);
-                   // Auto-ativa modo offline se Firebase falhar
-                   enableOfflineMode();
-               }
-           } else if (!auth.currentUser) {
-               // Se não tem Firebase config, usa modo offline direto
-               enableOfflineMode();
-           }
+            // Para GitHub Pages e outros servidores, NÃO faz login automático
+            // Deixa o usuário clicar no botão "Começar"
+            console.log('App pronto. Aguardando usuário clicar em "Começar"');
+            console.log('Firebase Auth Domain:', auth.config.authDomain);
         };
 
         onAuthStateChanged(auth, (user) => {
