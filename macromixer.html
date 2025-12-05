@@ -246,16 +246,16 @@
             </div>
             
             <div class="grid grid-cols-4 gap-2">
-                <button onclick="addWater(100)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2 rounded transition-all border border-slate-700">
+                <button id="water-btn-100" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2 rounded transition-all border border-slate-700">
                     +100ml
                 </button>
-                <button onclick="addWater(250)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2 rounded transition-all border border-slate-700">
+                <button id="water-btn-250" class="bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2 rounded transition-all border border-slate-700">
                     +250ml
                 </button>
-                <button onclick="addWater(500)" class="bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold py-2 rounded transition-all">
+                <button id="water-btn-500" class="bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold py-2 rounded transition-all">
                     +500ml
                 </button>
-                <button onclick="addWater(1000)" class="bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold py-2 rounded transition-all">
+                <button id="water-btn-1000" class="bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold py-2 rounded transition-all">
                     +1L
                 </button>
             </div>
@@ -2159,6 +2159,10 @@
         document.getElementById('confirm-meal').addEventListener('click', pushMealToDB);
         document.getElementById('reset-day-btn').addEventListener('click', resetDay);
         document.getElementById('reset-water-btn').addEventListener('click', resetWater);
+        document.getElementById('water-btn-100').addEventListener('click', () => addWater(100));
+        document.getElementById('water-btn-250').addEventListener('click', () => addWater(250));
+        document.getElementById('water-btn-500').addEventListener('click', () => addWater(500));
+        document.getElementById('water-btn-1000').addEventListener('click', () => addWater(1000));
         document.getElementById('copy-yesterday-btn').addEventListener('click', copyYesterday);
         document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
         document.getElementById('save-weight-btn').addEventListener('click', saveWeight);
