@@ -76,7 +76,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.3.0</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.3.1</span></h1>
             </div>
             <div id="auth-container" class="text-xs flex items-center gap-3">
                 <button id="theme-toggle" class="text-slate-400 hover:text-white transition-colors" title="Alternar tema">
@@ -1026,41 +1026,49 @@
         async function pushMealToDB() {
             if (!currentUser || !tempMealAnalysis) return;
 
+            // Função helper para garantir número válido
+            const safeNumber = (val) => {
+                const num = Number(val) || 0;
+                return isNaN(num) || !isFinite(num) ? 0 : Math.round(num * 10) / 10;
+            };
+
             const newTotal = {
-                cals: dailyLog.total.cals + tempMealAnalysis.totals.kcal,
-                prot: dailyLog.total.prot + tempMealAnalysis.totals.p,
-                carb: dailyLog.total.carb + tempMealAnalysis.totals.c,
-                fat: dailyLog.total.fat + tempMealAnalysis.totals.f
+                cals: safeNumber(dailyLog.total.cals + tempMealAnalysis.totals.kcal),
+                prot: safeNumber(dailyLog.total.prot + tempMealAnalysis.totals.p),
+                carb: safeNumber(dailyLog.total.carb + tempMealAnalysis.totals.c),
+                fat: safeNumber(dailyLog.total.fat + tempMealAnalysis.totals.f)
             };
 
             // Limpa os foods para remover campos undefined ou complexos
             const cleanFoods = tempMealAnalysis.foods.map(food => ({
-                name: food.name || "Desconhecido",
-                rawName: food.rawName || "",
-                qtd: food.qtd || 0,
-                unitDisplay: food.unitDisplay || "g",
+                name: String(food.name || "Desconhecido"),
+                rawName: String(food.rawName || ""),
+                qtd: safeNumber(food.qtd),
+                unitDisplay: String(food.unitDisplay || "g"),
                 macros: {
-                    p: food.macros?.p || 0,
-                    c: food.macros?.c || 0,
-                    f: food.macros?.f || 0,
-                    kcal: food.macros?.kcal || 0
+                    p: safeNumber(food.macros?.p),
+                    c: safeNumber(food.macros?.c),
+                    f: safeNumber(food.macros?.f),
+                    kcal: safeNumber(food.macros?.kcal)
                 },
-                error: food.error || false
+                error: Boolean(food.error)
             }));
 
             const mealEntry = {
-                name: tempMealAnalysis.mealName || "Refeição",
+                name: String(tempMealAnalysis.mealName || "Refeição"),
                 timestamp: new Date().toISOString(),
                 foods: cleanFoods,
                 totals: {
-                    p: tempMealAnalysis.totals.p || 0,
-                    c: tempMealAnalysis.totals.c || 0,
-                    f: tempMealAnalysis.totals.f || 0,
-                    kcal: tempMealAnalysis.totals.kcal || 0
+                    p: safeNumber(tempMealAnalysis.totals.p),
+                    c: safeNumber(tempMealAnalysis.totals.c),
+                    f: safeNumber(tempMealAnalysis.totals.f),
+                    kcal: safeNumber(tempMealAnalysis.totals.kcal)
                 },
-                isApproximate: tempMealAnalysis.isApproximate || false,
-                photo: currentMealPhoto || "" // URL do Firebase Storage (não base64)
+                isApproximate: Boolean(tempMealAnalysis.isApproximate),
+                photo: String(currentMealPhoto || "")
             };
+
+            console.log('📦 Dados a serem salvos:', JSON.stringify(mealEntry, null, 2));
 
             const todayStr = new Date().toISOString().split('T')[0];
             const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
@@ -1072,11 +1080,13 @@
                     await updateDoc(docRef, { items: arrayUnion(mealEntry), total: newTotal });
                 }
                 
+                console.log('✅ Refeição salva com sucesso!');
                 document.getElementById('meal-input').value = "";
                 document.getElementById('modal-result').classList.add('hidden');
                 removePhoto(); // Limpa foto após salvar
             } catch (error) {
                 console.error('❌ Erro ao salvar refeição:', error);
+                console.error('📦 Dados que causaram erro:', mealEntry);
                 alert('⚠️ Erro ao salvar refeição. Verifique o console para mais detalhes.');
             }
         }
