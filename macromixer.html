@@ -76,7 +76,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.3.1</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.4.0</span></h1>
             </div>
             <div id="auth-container" class="text-xs flex items-center gap-3">
                 <button id="theme-toggle" class="text-slate-400 hover:text-white transition-colors" title="Alternar tema">
@@ -1074,11 +1074,15 @@
             const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
             
             try {
-                if (dailyLog.items.length === 0) {
-                    await setDoc(docRef, { items: [mealEntry], total: newTotal });
-                } else {
-                    await updateDoc(docRef, { items: arrayUnion(mealEntry), total: newTotal });
-                }
+                // Ao invés de arrayUnion, carrega o array atual e adiciona o novo item
+                const currentItems = dailyLog.items || [];
+                const updatedItems = [...currentItems, mealEntry];
+                
+                await setDoc(docRef, { 
+                    items: updatedItems, 
+                    total: newTotal,
+                    water: dailyLog.water || 0
+                }, { merge: true });
                 
                 console.log('✅ Refeição salva com sucesso!');
                 document.getElementById('meal-input').value = "";
@@ -1693,9 +1697,9 @@
             const file = event.target.files[0];
             if (!file) return;
             
-            // Limita tamanho (max 5MB - Firebase Storage gratuito)
-            if (file.size > 5 * 1024 * 1024) {
-                alert('📸 Foto muito grande! Máximo 5MB.');
+            // Limita tamanho (max 12MB - iPhone 15 Pro Max tira fotos de até 10MB)
+            if (file.size > 12 * 1024 * 1024) {
+                alert('📸 Foto muito grande! Máximo 12MB.');
                 return;
             }
             
@@ -1769,13 +1773,14 @@
                 container.innerHTML = '<div class="text-center text-gray-600 py-4 italic text-sm">Nenhuma refeição hoje.</div>';
                 return;
             }
-            dailyLog.items.slice().reverse().forEach(log => {
+            dailyLog.items.slice().reverse().forEach((log, reverseIndex) => {
+                const actualIndex = dailyLog.items.length - 1 - reverseIndex;
                 const el = document.createElement('div');
                 // Proteção contra logs antigos sem isApproximate
                 const isApprox = log.isApproximate || false;
                 const borderClass = isApprox ? 'border-yellow-500' : 'border-cyan-500';
                 const bgClass = isApprox ? 'bg-yellow-900/10' : 'bg-slate-800/50';
-                el.className = `${bgClass} rounded-lg p-3 border-l-2 ${borderClass} flex justify-between items-center`;
+                el.className = `${bgClass} rounded-lg p-3 border-l-2 ${borderClass}`;
                 
                 // Proteção contra foods undefined
                 const foodDesc = (log.foods && log.foods.length > 0) 
@@ -1783,18 +1788,117 @@
                     : 'Refeição';
                     
                 const photoIcon = log.photo ? '<i class="fa-solid fa-camera text-cyan-400 text-[10px] ml-1" title="Com foto"></i>' : '';
-                el.innerHTML = `
-                    <div><div class="text-sm font-bold text-gray-200">${log.name || 'Refeição'} ${isApprox ? '<i class="fa-solid fa-triangle-exclamation text-yellow-500 text-[10px]" title="Aproximado"></i>' : ''}${photoIcon}</div><div class="text-xs text-gray-500 truncate w-40">${foodDesc}</div></div>
-                    <div class="text-right"><div class="text-sm font-bold text-white">${log.totals.kcal || 0} kcal</div><div class="text-[10px] text-gray-400 flex gap-2 font-mono"><span class="text-green-500">P:${log.totals.p || 0}</span><span class="text-blue-500">C:${log.totals.c || 0}</span><span class="text-yellow-500">G:${log.totals.f || 0}</span></div></div>`;
                 
-                // Se tiver foto, adiciona click para ver
+                el.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1" ${log.photo ? 'style="cursor: pointer;"' : ''}>
+                            <div class="text-sm font-bold text-gray-200">
+                                ${log.name || 'Refeição'} 
+                                ${isApprox ? '<i class="fa-solid fa-triangle-exclamation text-yellow-500 text-[10px]" title="Aproximado"></i>' : ''}
+                                ${photoIcon}
+                            </div>
+                            <div class="text-xs text-gray-500 truncate w-40">${foodDesc}</div>
+                        </div>
+                        <div class="text-right flex-shrink-0">
+                            <div class="text-sm font-bold text-white">${log.totals.kcal || 0} kcal</div>
+                            <div class="text-[10px] text-gray-400 flex gap-2 font-mono">
+                                <span class="text-green-500">P:${log.totals.p || 0}</span>
+                                <span class="text-blue-500">C:${log.totals.c || 0}</span>
+                                <span class="text-yellow-500">G:${log.totals.f || 0}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-2 pt-2 border-t border-slate-700">
+                        <button class="edit-meal-btn flex-1 bg-blue-700 hover:bg-blue-600 text-white text-xs font-bold py-1 px-2 rounded transition-all" data-index="${actualIndex}">
+                            <i class="fa-solid fa-edit mr-1"></i>Editar
+                        </button>
+                        <button class="delete-meal-btn flex-1 bg-red-700 hover:bg-red-600 text-white text-xs font-bold py-1 px-2 rounded transition-all" data-index="${actualIndex}">
+                            <i class="fa-solid fa-trash mr-1"></i>Deletar
+                        </button>
+                    </div>
+                `;
+                
+                // Se tiver foto, adiciona click para ver (apenas na área do nome)
                 if (log.photo) {
-                    el.style.cursor = 'pointer';
-                    el.addEventListener('click', () => showMealPhoto(log.photo));
+                    const nameArea = el.querySelector('.flex-1');
+                    nameArea.addEventListener('click', () => showMealPhoto(log.photo));
                 }
+                
+                // Event listeners para os botões
+                const editBtn = el.querySelector('.edit-meal-btn');
+                const deleteBtn = el.querySelector('.delete-meal-btn');
+                
+                editBtn.addEventListener('click', () => editMeal(actualIndex));
+                deleteBtn.addEventListener('click', () => deleteMeal(actualIndex));
                 
                 container.appendChild(el);
             });
+        }
+
+        // ==================== EDITAR E DELETAR REFEIÇÕES ====================
+        async function editMeal(index) {
+            const meal = dailyLog.items[index];
+            if (!meal) return;
+            
+            // Reconstrói o texto da refeição
+            const mealText = meal.foods.map(food => {
+                return `${food.qtd} ${food.unitDisplay} ${food.rawName}`;
+            }).join('\n');
+            
+            // Preenche o campo de entrada
+            document.getElementById('meal-input').value = mealText;
+            
+            // Remove a refeição antiga
+            await deleteMeal(index, false); // false = não atualizar UI ainda
+            
+            // Scroll para o topo
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            alert('✏️ Refeição carregada para edição! Faça as alterações e clique em "Calcular".');
+        }
+        
+        async function deleteMeal(index, updateUI = true) {
+            if (updateUI && !confirm('🗑️ Deletar esta refeição?')) return;
+            
+            const meal = dailyLog.items[index];
+            if (!meal) return;
+            
+            // Remove do array
+            dailyLog.items.splice(index, 1);
+            
+            // Recalcula total
+            dailyLog.total = { cals: 0, prot: 0, carb: 0, fat: 0 };
+            dailyLog.items.forEach(item => {
+                dailyLog.total.cals += item.totals.kcal || 0;
+                dailyLog.total.prot += item.totals.p || 0;
+                dailyLog.total.carb += item.totals.c || 0;
+                dailyLog.total.fat += item.totals.f || 0;
+            });
+            
+            // Salva no Firebase/localStorage
+            if (currentUser && !useLocalStorage) {
+                try {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
+                    await setDoc(docRef, { 
+                        items: dailyLog.items, 
+                        total: dailyLog.total,
+                        water: dailyLog.water || 0
+                    }, { merge: true });
+                    console.log('✅ Refeição deletada com sucesso!');
+                } catch (error) {
+                    console.error('❌ Erro ao deletar refeição:', error);
+                    alert('⚠️ Erro ao deletar refeição.');
+                }
+            } else {
+                saveToLocalStorage();
+            }
+            
+            if (updateUI) {
+                renderLogs();
+                updateDashboard();
+                analyzeContext();
+            }
         }
 
         // --- DR CARLOS AI (VARIÁVEL) ---
