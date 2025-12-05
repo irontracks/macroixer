@@ -76,7 +76,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.1.1</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.2</span></h1>
             </div>
             <div id="auth-container" class="text-xs flex items-center gap-3">
                 <button id="theme-toggle" class="text-slate-400 hover:text-white transition-colors" title="Alternar tema">
@@ -484,262 +484,160 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // --- DATABASE DE ALIMENTOS EXPANDIDO v2.0 (Padronizado Dr. Carlos) ---
-        // Macros por 100g. Mais de 150 alimentos!
+        // --- DATABASE DE ALIMENTOS v2.2 - DR. CARLOS EDITION (Calibrado) ---
+        // Base calibrada para Bodybuilding Enhanced
+        // Valores mistos: 100g + Unidades práticas
         const foodDatabase = {
-            // ==================== CARBOIDRATOS ====================
-            // Arroz e Cereais
-            "arroz": { c: 28, p: 2.5, f: 0.2, kcal: 130, unit: "Arroz Branco (Cozido)", approx: { colher: 25, escumadeira: 80, xicara: 150 } },
-            "arroz integral": { c: 26, p: 2.6, f: 1, kcal: 124, unit: "Arroz Integral (Cozido)", approx: { colher: 25, escumadeira: 80 } },
-            "arroz parboilizado": { c: 27, p: 2.7, f: 0.3, kcal: 123, unit: "Arroz Parboilizado", approx: { colher: 25, escumadeira: 80 } },
-            "quinoa": { c: 21, p: 4.4, f: 1.9, kcal: 120, unit: "Quinoa (Cozida)", approx: { colher: 25, xicara: 185 } },
-            // Tubérculos e Raízes
-            "batata": { c: 17, p: 2, f: 0, kcal: 77, unit: "Batata Inglesa (Cozida)", approx: { colher: 30, unidade: 150 } },
-            "batata doce": { c: 20, p: 1.6, f: 0.5, kcal: 86, unit: "Batata Doce (Cozida)", approx: { colher: 30, unidade: 150, rodelas: 40 } },
-            "batata baroa": { c: 25, p: 0.8, f: 0.1, kcal: 105, unit: "Batata Baroa (Mandioquinha)", approx: { unidade: 80, pedaco: 50 } },
-            "mandioca": { c: 38, p: 1.4, f: 0.3, kcal: 159, unit: "Mandioca (Cozida)", approx: { pedaco: 100, colher: 40 } },
-            "inhame": { c: 28, p: 1.5, f: 0.2, kcal: 118, unit: "Inhame (Cozido)", approx: { unidade: 120, pedaco: 80 } },
-            "cará": { c: 27, p: 2.1, f: 0.2, kcal: 118, unit: "Cará (Cozido)", approx: { pedaco: 100 } },
-            
-            // Massas e Pães
-            "macarrao": { c: 30, p: 5, f: 1, kcal: 157, unit: "Macarrão (Cozido)", approx: { escumadeira: 90, pegador: 100, prato: 250 } },
-            "macarrão": { c: 30, p: 5, f: 1, kcal: 157, unit: "Macarrão (Cozido)", approx: { escumadeira: 90, pegador: 100, prato: 250 } },
-            "macarrao integral": { c: 26, p: 5, f: 1.5, kcal: 140, unit: "Macarrão Integral", approx: { escumadeira: 90, pegador: 100 } },
-            "pao": { c: 49, p: 9, f: 3, kcal: 265, unit: "Pão Francês", approx: { unidade: 50 } },
-            "pão": { c: 49, p: 9, f: 3, kcal: 265, unit: "Pão Francês", approx: { unidade: 50 } },
-            "pao integral": { c: 43, p: 10, f: 4, kcal: 247, unit: "Pão Integral", approx: { fatia: 30, unidade: 50 } },
-            "pao de forma": { c: 45, p: 8, f: 3, kcal: 250, unit: "Pão de Forma", approx: { fatia: 25 } },
-            "tapioca": { c: 88, p: 0.2, f: 0.1, kcal: 358, unit: "Tapioca (Goma)", approx: { colher: 20, crepe: 50 } },
-            "cuscuz": { c: 22, p: 3.8, f: 0.3, kcal: 112, unit: "Cuscuz de Milho", approx: { fatia: 80, pedaco: 100 } },
-            
-            // Cereais e Grãos
-            "aveia": { c: 57, p: 14, f: 6, kcal: 389, unit: "Aveia em Flocos", approx: { colher: 15, xicara: 80 } },
-            "granola": { c: 65, p: 10, f: 15, kcal: 450, unit: "Granola", approx: { colher: 20, xicara: 100 } },
-            "farelo de aveia": { c: 66, p: 17, f: 7, kcal: 246, unit: "Farelo de Aveia", approx: { colher: 10 } },
-            
-            // ==================== PROTEÍNAS - CARNES ====================
-            // Frango
-            "frango": { c: 0, p: 31, f: 3.6, kcal: 165, unit: "Peito de Frango (Grelhado)", approx: { bife: 120, file: 120, pedaco: 100, colher: 30 } },
-            "peito de frango": { c: 0, p: 31, f: 3.6, kcal: 165, unit: "Peito de Frango (Grelhado)", approx: { bife: 120, file: 120, pedaco: 100 } },
-            "coxa de frango": { c: 0, p: 26, f: 7, kcal: 175, unit: "Coxa de Frango (Sem Pele)", approx: { unidade: 90, pedaco: 80 } },
-            "sobrecoxa de frango": { c: 0, p: 25, f: 8, kcal: 180, unit: "Sobrecoxa (Sem Pele)", approx: { unidade: 100, pedaco: 80 } },
-            "frango desfiado": { c: 0, p: 30, f: 4, kcal: 160, unit: "Frango Desfiado", approx: { colher: 30, xicara: 140 } },
-            
-            // Carne Bovina
-            "carne": { c: 0, p: 26, f: 8, kcal: 180, unit: "Patinho Moído", approx: { colher: 30, bife: 100, pedaco: 100 } },
-            "patinho": { c: 0, p: 26, f: 8, kcal: 180, unit: "Patinho Moído", approx: { colher: 30, bife: 100 } },
-            "bife": { c: 0, p: 26, f: 8, kcal: 200, unit: "Bife Bovino (Grelhado)", approx: { unidade: 120, medio: 120, grande: 180, pequeno: 80 } },
-            "picanha": { c: 0, p: 21, f: 16, kcal: 230, unit: "Picanha (Grelhada)", approx: { bife: 150, pedaco: 100 } },
-            "alcatra": { c: 0, p: 24, f: 10, kcal: 190, unit: "Alcatra (Grelhada)", approx: { bife: 120, pedaco: 100 } },
-            "contra file": { c: 0, p: 23, f: 12, kcal: 200, unit: "Contra-Filé", approx: { bife: 120, pedaco: 100 } },
-            "filé mignon": { c: 0, p: 27, f: 6, kcal: 170, unit: "Filé Mignon", approx: { bife: 120, medalhao: 80 } },
-            "file mignon": { c: 0, p: 27, f: 6, kcal: 170, unit: "Filé Mignon", approx: { bife: 120, medalhao: 80 } },
-            "coxao mole": { c: 0, p: 25, f: 9, kcal: 185, unit: "Coxão Mole", approx: { bife: 120, pedaco: 100 } },
-            "coxão mole": { c: 0, p: 25, f: 9, kcal: 185, unit: "Coxão Mole", approx: { bife: 120, pedaco: 100 } },
-            "musculo": { c: 0, p: 27, f: 5, kcal: 160, unit: "Músculo Bovino", approx: { pedaco: 100, fatia: 80 } },
-            "músculo": { c: 0, p: 27, f: 5, kcal: 160, unit: "Músculo Bovino", approx: { pedaco: 100, fatia: 80 } },
-            "cupim": { c: 0, p: 19, f: 21, kcal: 270, unit: "Cupim", approx: { fatia: 80, pedaco: 100 } },
-            "costela": { c: 0, p: 18, f: 25, kcal: 300, unit: "Costela Bovina", approx: { pedaco: 150 } },
-            
-            // Carne Suína
-            "porco": { c: 0, p: 27, f: 3, kcal: 143, unit: "Lombo de Porco (Grelhado)", approx: { bife: 120, fatia: 80 } },
-            "lombo de porco": { c: 0, p: 27, f: 3, kcal: 143, unit: "Lombo de Porco", approx: { bife: 120, fatia: 80 } },
-            "bisteca": { c: 0, p: 22, f: 12, kcal: 200, unit: "Bisteca de Porco", approx: { unidade: 120 } },
-            "pernil": { c: 0, p: 24, f: 8, kcal: 175, unit: "Pernil de Porco", approx: { fatia: 80, pedaco: 100 } },
-            "bacon": { c: 1, p: 12, f: 42, kcal: 417, unit: "Bacon", approx: { fatia: 15, tira: 10 } },
-            "linguica": { c: 2, p: 15, f: 25, kcal: 301, unit: "Linguiça", approx: { unidade: 60, gomo: 50 } },
-            "linguiça": { c: 2, p: 15, f: 25, kcal: 301, unit: "Linguiça", approx: { unidade: 60, gomo: 50 } },
-            
-            // ==================== PROTEÍNAS - PEIXES E FRUTOS DO MAR ====================
-            // Peixes de Água Doce
-            "tilapia": { c: 0, p: 26, f: 1.7, kcal: 128, unit: "Tilápia (Grelhada)", approx: { file: 120, pedaco: 100 } },
-            "tilápia": { c: 0, p: 26, f: 1.7, kcal: 128, unit: "Tilápia (Grelhada)", approx: { file: 120, pedaco: 100 } },
-            "file de tilapia": { c: 0, p: 26, f: 1.7, kcal: 128, unit: "Filé de Tilápia", approx: { file: 120, pedaco: 100 } },
-            "filé de tilápia": { c: 0, p: 26, f: 1.7, kcal: 128, unit: "Filé de Tilápia", approx: { file: 120, pedaco: 100 } },
-            "tambaqui": { c: 0, p: 20, f: 4, kcal: 120, unit: "Tambaqui", approx: { posta: 150, pedaco: 100 } },
-            "pacu": { c: 0, p: 18, f: 3, kcal: 105, unit: "Pacu", approx: { posta: 150, pedaco: 100 } },
-            "pintado": { c: 0, p: 22, f: 2, kcal: 108, unit: "Pintado", approx: { posta: 150, pedaco: 100 } },
-            "tucunaré": { c: 0, p: 21, f: 1.5, kcal: 98, unit: "Tucunaré", approx: { file: 120, pedaco: 100 } },
-            "tucunare": { c: 0, p: 21, f: 1.5, kcal: 98, unit: "Tucunaré", approx: { file: 120, pedaco: 100 } },
-            
-            // Peixes de Água Salgada
-            "salmao": { c: 0, p: 20, f: 13, kcal: 208, unit: "Salmão (Grelhado)", approx: { file: 120, posta: 150, pedaco: 100 } },
-            "salmão": { c: 0, p: 20, f: 13, kcal: 208, unit: "Salmão (Grelhado)", approx: { file: 120, posta: 150, pedaco: 100 } },
-            "atum": { c: 0, p: 30, f: 1, kcal: 132, unit: "Atum (Conserva em Água)", approx: { lata: 140, colher: 30 } },
-            "atum fresco": { c: 0, p: 23, f: 5, kcal: 144, unit: "Atum Fresco", approx: { posta: 150, pedaco: 100 } },
-            "sardinha": { c: 0, p: 25, f: 11, kcal: 208, unit: "Sardinha (Conserva)", approx: { lata: 130, unidade: 30 } },
-            "sardinha fresca": { c: 0, p: 20, f: 10, kcal: 180, unit: "Sardinha Fresca", approx: { unidade: 80 } },
-            "bacalhau": { c: 0, p: 23, f: 0.7, kcal: 105, unit: "Bacalhau (Dessalgado)", approx: { posta: 150, lascas: 50 } },
-            "merluza": { c: 0, p: 17, f: 1, kcal: 79, unit: "Merluza", approx: { file: 120, pedaco: 100 } },
-            "pescada": { c: 0, p: 17, f: 0.5, kcal: 74, unit: "Pescada", approx: { file: 120, pedaco: 100 } },
-            "robalo": { c: 0, p: 19, f: 2, kcal: 97, unit: "Robalo", approx: { file: 120, pedaco: 100 } },
-            "dourado": { c: 0, p: 21, f: 3, kcal: 115, unit: "Dourado", approx: { file: 120, pedaco: 100 } },
-            "badejo": { c: 0, p: 18, f: 1, kcal: 82, unit: "Badejo", approx: { file: 120, pedaco: 100 } },
-            "linguado": { c: 0, p: 19, f: 1.2, kcal: 86, unit: "Linguado", approx: { file: 120, pedaco: 100 } },
-            "tainha": { c: 0, p: 19, f: 7, kcal: 150, unit: "Tainha", approx: { posta: 150, pedaco: 100 } },
-            "cavala": { c: 0, p: 19, f: 14, kcal: 205, unit: "Cavala", approx: { posta: 150, pedaco: 100 } },
-            "truta": { c: 0, p: 20, f: 3, kcal: 119, unit: "Truta", approx: { file: 120, pedaco: 100 } },
-            
-            // Frutos do Mar
-            "camarao": { c: 0, p: 24, f: 0.3, kcal: 99, unit: "Camarão (Cozido)", approx: { unidade: 15, colher: 30 } },
-            "camarão": { c: 0, p: 24, f: 0.3, kcal: 99, unit: "Camarão (Cozido)", approx: { unidade: 15, colher: 30 } },
-            "lula": { c: 3, p: 16, f: 1.4, kcal: 92, unit: "Lula", approx: { anel: 20, pedaco: 50 } },
-            "polvo": { c: 2, p: 15, f: 1, kcal: 82, unit: "Polvo", approx: { pedaco: 80 } },
-            "mexilhao": { c: 4, p: 12, f: 2, kcal: 86, unit: "Mexilhão", approx: { unidade: 20 } },
-            "mexilhão": { c: 4, p: 12, f: 2, kcal: 86, unit: "Mexilhão", approx: { unidade: 20 } },
-            "ostra": { c: 5, p: 9, f: 2, kcal: 81, unit: "Ostra", approx: { unidade: 30 } },
-            "lagosta": { c: 1, p: 19, f: 0.9, kcal: 89, unit: "Lagosta", approx: { cauda: 150 } },
-            "caranguejo": { c: 0, p: 18, f: 1, kcal: 83, unit: "Caranguejo", approx: { pedaco: 50 } },
-            
-            // ==================== PROTEÍNAS - OVOS E LATICÍNIOS ====================
-            "ovo": { c: 0.6, p: 6, f: 5, kcal: 70, unit: "Ovo Inteiro (Médio)", approx: { unidade: 50 } },
-            "claras": { c: 0, p: 13, f: 0, kcal: 54, unit: "Clara de Ovo (Pasteurizada)", approx: { xicara: 240, colher: 15 } },
-            "gema": { c: 0.6, p: 3, f: 5, kcal: 55, unit: "Gema de Ovo", approx: { unidade: 17 } },
-            "ovo de codorna": { c: 0.4, p: 1.2, f: 1.1, kcal: 14, unit: "Ovo de Codorna", approx: { unidade: 9 } },
-            
-            // Queijos
-            "queijo": { c: 2, p: 25, f: 30, kcal: 400, unit: "Queijo Mussarela", approx: { fatia: 20, pedaco: 30 } },
-            "mussarela": { c: 2, p: 25, f: 30, kcal: 400, unit: "Queijo Mussarela", approx: { fatia: 20, pedaco: 30 } },
-            "queijo cottage": { c: 3, p: 11, f: 4, kcal: 98, unit: "Queijo Cottage", approx: { colher: 30, pote: 200 } },
-            "queijo minas": { c: 1, p: 18, f: 20, kcal: 264, unit: "Queijo Minas", approx: { fatia: 30, pedaco: 40 } },
-            "queijo prato": { c: 1, p: 25, f: 28, kcal: 360, unit: "Queijo Prato", approx: { fatia: 20, pedaco: 30 } },
-            "parmesao": { c: 4, p: 36, f: 26, kcal: 392, unit: "Queijo Parmesão", approx: { colher: 10, ralado: 5 } },
-            "parmesão": { c: 4, p: 36, f: 26, kcal: 392, unit: "Queijo Parmesão", approx: { colher: 10, ralado: 5 } },
-            "ricota": { c: 3, p: 11, f: 13, kcal: 174, unit: "Ricota", approx: { fatia: 30, colher: 25 } },
-            "requeijao": { c: 3, p: 8, f: 22, kcal: 240, unit: "Requeijão Cremoso", approx: { colher: 20 } },
-            "requeijão": { c: 3, p: 8, f: 22, kcal: 240, unit: "Requeijão Cremoso", approx: { colher: 20 } },
-            
-            // Leites e Iogurtes
-            "leite": { c: 5, p: 3.2, f: 3.5, kcal: 61, unit: "Leite Integral", approx: { copo: 200, xicara: 240 } },
-            "leite desnatado": { c: 5, p: 3.4, f: 0.2, kcal: 35, unit: "Leite Desnatado", approx: { copo: 200, xicara: 240 } },
-            "leite semi desnatado": { c: 5, p: 3.3, f: 1.5, kcal: 49, unit: "Leite Semi-Desnatado", approx: { copo: 200 } },
-            "iogurte": { c: 4, p: 3.5, f: 3, kcal: 61, unit: "Iogurte Natural", approx: { pote: 170, colher: 30 } },
-            "iogurte grego": { c: 4, p: 9, f: 5, kcal: 97, unit: "Iogurte Grego", approx: { pote: 170, colher: 30 } },
-            "iogurte desnatado": { c: 7, p: 4, f: 0.2, kcal: 45, unit: "Iogurte Desnatado", approx: { pote: 170 } },
-            
-            // Suplementos
-            "whey": { c: 3, p: 24, f: 1, kcal: 120, unit: "Whey Protein (Dose Padrão)", approx: { scoop: 30, dose: 30, colher: 15 } },
-            "caseina": { c: 3, p: 24, f: 1, kcal: 120, unit: "Caseína", approx: { scoop: 30, dose: 30 } },
-            "caseína": { c: 3, p: 24, f: 1, kcal: 120, unit: "Caseína", approx: { scoop: 30, dose: 30 } },
-            "albumina": { c: 2, p: 24, f: 0, kcal: 104, unit: "Albumina", approx: { scoop: 30, colher: 15 } },
-            "creatina": { c: 0, p: 0, f: 0, kcal: 0, unit: "Creatina", approx: { colher: 5 } },
-            
-            // ==================== LEGUMINOSAS ====================
-            "feijao": { c: 14, p: 5, f: 0.5, kcal: 76, unit: "Feijão Carioca (Cozido)", approx: { colher: 20, concha: 140 } },
-            "feijão": { c: 14, p: 5, f: 0.5, kcal: 76, unit: "Feijão Carioca (Cozido)", approx: { colher: 20, concha: 140 } },
-            "feijao preto": { c: 14, p: 4.5, f: 0.5, kcal: 77, unit: "Feijão Preto (Cozido)", approx: { colher: 20, concha: 140 } },
-            "feijao branco": { c: 15, p: 6, f: 0.4, kcal: 85, unit: "Feijão Branco", approx: { colher: 20, concha: 140 } },
-            "lentilha": { c: 20, p: 9, f: 0.4, kcal: 116, unit: "Lentilha (Cozida)", approx: { colher: 25, concha: 140 } },
-            "grao de bico": { c: 27, p: 9, f: 3, kcal: 164, unit: "Grão de Bico (Cozido)", approx: { colher: 25, xicara: 160 } },
-            "grão de bico": { c: 27, p: 9, f: 3, kcal: 164, unit: "Grão de Bico (Cozido)", approx: { colher: 25, xicara: 160 } },
-            "ervilha": { c: 14, p: 5, f: 0.4, kcal: 81, unit: "Ervilha (Cozida)", approx: { colher: 25, xicara: 160 } },
-            "soja": { c: 11, p: 13, f: 6, kcal: 141, unit: "Soja (Cozida)", approx: { colher: 25, xicara: 170 } },
-            
-            // ==================== FRUTAS ====================
-            "banana": { c: 23, p: 1, f: 0.3, kcal: 89, unit: "Banana Prata", approx: { unidade: 80, media: 80 } },
-            "banana nanica": { c: 22, p: 1.1, f: 0.2, kcal: 87, unit: "Banana Nanica", approx: { unidade: 90 } },
-            "banana da terra": { c: 32, p: 1.3, f: 0.4, kcal: 128, unit: "Banana da Terra", approx: { unidade: 150 } },
-            "maca": { c: 14, p: 0.3, f: 0.2, kcal: 52, unit: "Maçã", approx: { unidade: 130, media: 130 } },
-            "maçã": { c: 14, p: 0.3, f: 0.2, kcal: 52, unit: "Maçã", approx: { unidade: 130, media: 130 } },
-            "mamao": { c: 11, p: 0.5, f: 0.1, kcal: 43, unit: "Mamão Papaya", approx: { fatia: 100, colher: 40 } },
-            "mamão": { c: 11, p: 0.5, f: 0.1, kcal: 43, unit: "Mamão Papaya", approx: { fatia: 100, colher: 40 } },
-            "morango": { c: 8, p: 0.7, f: 0.3, kcal: 32, unit: "Morango", approx: { unidade: 15, xicara: 150 } },
-            "abacate": { c: 9, p: 2, f: 15, kcal: 160, unit: "Abacate", approx: { colher: 30, unidade: 200 } },
-            "melancia": { c: 8, p: 0.6, f: 0.2, kcal: 30, unit: "Melancia", approx: { fatia: 200, pedaco: 100 } },
-            "laranja": { c: 12, p: 0.9, f: 0.1, kcal: 47, unit: "Laranja", approx: { unidade: 130, media: 130 } },
-            "abacaxi": { c: 13, p: 0.5, f: 0.1, kcal: 50, unit: "Abacaxi", approx: { rodela: 80, fatia: 100 } },
-            "manga": { c: 15, p: 0.8, f: 0.4, kcal: 60, unit: "Manga", approx: { unidade: 200, fatia: 80 } },
-            "uva": { c: 18, p: 0.7, f: 0.2, kcal: 69, unit: "Uva", approx: { cacho: 100, unidade: 5 } },
-            "pera": { c: 15, p: 0.4, f: 0.1, kcal: 57, unit: "Pera", approx: { unidade: 150 } },
-            "kiwi": { c: 15, p: 1.1, f: 0.5, kcal: 61, unit: "Kiwi", approx: { unidade: 70 } },
-            "pessego": { c: 10, p: 0.9, f: 0.3, kcal: 39, unit: "Pêssego", approx: { unidade: 150 } },
-            "pêssego": { c: 10, p: 0.9, f: 0.3, kcal: 39, unit: "Pêssego", approx: { unidade: 150 } },
-            "ameixa": { c: 11, p: 0.7, f: 0.3, kcal: 46, unit: "Ameixa", approx: { unidade: 60 } },
-            "melao": { c: 8, p: 0.8, f: 0.2, kcal: 34, unit: "Melão", approx: { fatia: 150, pedaco: 100 } },
-            "melão": { c: 8, p: 0.8, f: 0.2, kcal: 34, unit: "Melão", approx: { fatia: 150, pedaco: 100 } },
-            "goiaba": { c: 14, p: 2.6, f: 1, kcal: 68, unit: "Goiaba", approx: { unidade: 100 } },
-            "caqui": { c: 19, p: 0.6, f: 0.2, kcal: 70, unit: "Caqui", approx: { unidade: 120 } },
-            "tangerina": { c: 13, p: 0.8, f: 0.3, kcal: 53, unit: "Tangerina", approx: { unidade: 100 } },
-            "limao": { c: 9, p: 1.1, f: 0.3, kcal: 29, unit: "Limão", approx: { unidade: 60 } },
-            "limão": { c: 9, p: 1.1, f: 0.3, kcal: 29, unit: "Limão", approx: { unidade: 60 } },
-            "acai": { c: 6, p: 1, f: 5, kcal: 70, unit: "Açaí (Polpa Pura)", approx: { tigela: 200, colher: 30 } },
-            "açaí": { c: 6, p: 1, f: 5, kcal: 70, unit: "Açaí (Polpa Pura)", approx: { tigela: 200, colher: 30 } },
-            "coco": { c: 15, p: 3, f: 33, kcal: 354, unit: "Coco (Polpa)", approx: { pedaco: 50, colher: 20 } },
-            "maracuja": { c: 13, p: 2.2, f: 0.7, kcal: 68, unit: "Maracujá", approx: { unidade: 100 } },
-            "maracujá": { c: 13, p: 2.2, f: 0.7, kcal: 68, unit: "Maracujá", approx: { unidade: 100 } },
-            
-            // ==================== SEMENTES E OLEAGINOSAS ====================
-            "amendoim": { c: 16, p: 26, f: 49, kcal: 567, unit: "Amendoim Torrado", approx: { colher: 15, punhado: 30 } },
-            "pasta de amendoim": { c: 20, p: 25, f: 50, kcal: 588, unit: "Pasta de Amendoim", approx: { colher: 20 } },
-            "castanha do para": { c: 12, p: 14, f: 66, kcal: 656, unit: "Castanha do Pará", approx: { unidade: 5, punhado: 30 } },
-            "castanha do pará": { c: 12, p: 14, f: 66, kcal: 656, unit: "Castanha do Pará", approx: { unidade: 5, punhado: 30 } },
-            "castanha": { c: 12, p: 14, f: 66, kcal: 656, unit: "Castanha do Pará", approx: { unidade: 5, punhado: 30 } },
-            "castanha de caju": { c: 30, p: 18, f: 44, kcal: 553, unit: "Castanha de Caju", approx: { unidade: 2, punhado: 30 } },
-            "amêndoa": { c: 22, p: 21, f: 50, kcal: 579, unit: "Amêndoa", approx: { unidade: 1, punhado: 30 } },
-            "amendoa": { c: 22, p: 21, f: 50, kcal: 579, unit: "Amêndoa", approx: { unidade: 1, punhado: 30 } },
-            "noz": { c: 14, p: 15, f: 65, kcal: 654, unit: "Noz", approx: { unidade: 5, punhado: 30 } },
-            "pistache": { c: 28, p: 20, f: 45, kcal: 560, unit: "Pistache", approx: { punhado: 30, unidade: 1 } },
-            "macadamia": { c: 14, p: 8, f: 76, kcal: 718, unit: "Macadâmia", approx: { unidade: 2, punhado: 30 } },
-            "macadâmia": { c: 14, p: 8, f: 76, kcal: 718, unit: "Macadâmia", approx: { unidade: 2, punhado: 30 } },
-            "avelã": { c: 17, p: 15, f: 61, kcal: 628, unit: "Avelã", approx: { unidade: 1, punhado: 30 } },
-            "avela": { c: 17, p: 15, f: 61, kcal: 628, unit: "Avelã", approx: { unidade: 1, punhado: 30 } },
-            "semente de girassol": { c: 20, p: 21, f: 51, kcal: 584, unit: "Semente de Girassol", approx: { colher: 15, punhado: 30 } },
-            "semente de abobora": { c: 14, p: 30, f: 49, kcal: 559, unit: "Semente de Abóbora", approx: { colher: 15, punhado: 30 } },
-            "semente de abóbora": { c: 14, p: 30, f: 49, kcal: 559, unit: "Semente de Abóbora", approx: { colher: 15, punhado: 30 } },
-            "chia": { c: 42, p: 17, f: 31, kcal: 486, unit: "Chia", approx: { colher: 12 } },
-            "linhaca": { c: 29, p: 18, f: 42, kcal: 534, unit: "Linhaça", approx: { colher: 10 } },
-            "linhaça": { c: 29, p: 18, f: 42, kcal: 534, unit: "Linhaça", approx: { colher: 10 } },
-            "gergelim": { c: 23, p: 18, f: 50, kcal: 573, unit: "Gergelim", approx: { colher: 10 } },
-            "tahine": { c: 21, p: 17, f: 54, kcal: 595, unit: "Tahine (Pasta de Gergelim)", approx: { colher: 15 } },
-            
-            // ==================== VEGETAIS E VERDURAS ====================
-            "brocolis": { c: 7, p: 2.8, f: 0.4, kcal: 34, unit: "Brócolis (Cozido)", approx: { ramo: 50, colher: 30 } },
-            "brócolis": { c: 7, p: 2.8, f: 0.4, kcal: 34, unit: "Brócolis (Cozido)", approx: { ramo: 50, colher: 30 } },
-            "couve-flor": { c: 5, p: 1.9, f: 0.3, kcal: 25, unit: "Couve-Flor (Cozida)", approx: { ramo: 50, colher: 30 } },
-            "couve": { c: 9, p: 4.3, f: 0.9, kcal: 49, unit: "Couve (Crua)", approx: { folha: 30, colher: 20 } },
-            "espinafre": { c: 3.6, p: 2.9, f: 0.4, kcal: 23, unit: "Espinafre (Cozido)", approx: { colher: 30, maco: 100 } },
-            "alface": { c: 2.9, p: 1.4, f: 0.2, kcal: 15, unit: "Alface", approx: { folha: 20, prato: 50 } },
-            "tomate": { c: 3.9, p: 0.9, f: 0.2, kcal: 18, unit: "Tomate", approx: { unidade: 100, rodela: 20 } },
-            "cenoura": { c: 10, p: 0.9, f: 0.2, kcal: 41, unit: "Cenoura (Crua)", approx: { unidade: 80, rodela: 10 } },
-            "beterraba": { c: 10, p: 1.6, f: 0.2, kcal: 43, unit: "Beterraba (Cozida)", approx: { unidade: 100, rodela: 20 } },
-            "abobrinha": { c: 3.1, p: 1.2, f: 0.3, kcal: 17, unit: "Abobrinha (Cozida)", approx: { unidade: 150, rodela: 20 } },
-            "berinjela": { c: 6, p: 1, f: 0.2, kcal: 25, unit: "Berinjela (Cozida)", approx: { fatia: 50, unidade: 200 } },
-            "pimentao": { c: 6, p: 1, f: 0.3, kcal: 27, unit: "Pimentão", approx: { unidade: 120, tira: 20 } },
-            "pimentão": { c: 6, p: 1, f: 0.3, kcal: 27, unit: "Pimentão", approx: { unidade: 120, tira: 20 } },
-            "pepino": { c: 3.6, p: 0.7, f: 0.1, kcal: 15, unit: "Pepino", approx: { unidade: 150, rodela: 10 } },
-            "chuchu": { c: 4.5, p: 0.8, f: 0.1, kcal: 19, unit: "Chuchu (Cozido)", approx: { unidade: 150, pedaco: 50 } },
-            "vagem": { c: 7, p: 1.8, f: 0.1, kcal: 31, unit: "Vagem (Cozida)", approx: { colher: 25, xicara: 100 } },
-            "quiabo": { c: 7, p: 2, f: 0.2, kcal: 33, unit: "Quiabo (Cozido)", approx: { unidade: 20, colher: 30 } },
-            "abobora": { c: 12, p: 1, f: 0.1, kcal: 45, unit: "Abóbora (Cozida)", approx: { pedaco: 80, colher: 40 } },
-            "abóbora": { c: 12, p: 1, f: 0.1, kcal: 45, unit: "Abóbora (Cozida)", approx: { pedaco: 80, colher: 40 } },
-            "repolho": { c: 6, p: 1.3, f: 0.1, kcal: 25, unit: "Repolho (Cru)", approx: { folha: 50, colher: 30 } },
-            "rucula": { c: 3.7, p: 2.6, f: 0.7, kcal: 25, unit: "Rúcula", approx: { maco: 50, prato: 30 } },
-            "rúcula": { c: 3.7, p: 2.6, f: 0.7, kcal: 25, unit: "Rúcula", approx: { maco: 50, prato: 30 } },
-            "agriao": { c: 2, p: 2.6, f: 0.1, kcal: 11, unit: "Agrião", approx: { maco: 50 } },
-            "agrião": { c: 2, p: 2.6, f: 0.1, kcal: 11, unit: "Agrião", approx: { maco: 50 } },
-            
-            // ==================== GORDURAS E ÓLEOS ====================
-            "azeite": { c: 0, p: 0, f: 100, kcal: 884, unit: "Azeite de Oliva", approx: { colher: 12, fio: 5 } },
-            "oleo": { c: 0, p: 0, f: 100, kcal: 884, unit: "Óleo de Cozinha", approx: { colher: 12, fio: 5 } },
-            "óleo": { c: 0, p: 0, f: 100, kcal: 884, unit: "Óleo de Cozinha", approx: { colher: 12, fio: 5 } },
-            "oleo de coco": { c: 0, p: 0, f: 100, kcal: 862, unit: "Óleo de Coco", approx: { colher: 13 } },
-            "óleo de coco": { c: 0, p: 0, f: 100, kcal: 862, unit: "Óleo de Coco", approx: { colher: 13 } },
-            "manteiga": { c: 0.1, p: 0.9, f: 81, kcal: 717, unit: "Manteiga", approx: { colher: 10, ponta: 5 } },
-            "margarina": { c: 0.7, p: 0.2, f: 80, kcal: 717, unit: "Margarina", approx: { colher: 10, ponta: 5 } },
-            "banha": { c: 0, p: 0, f: 100, kcal: 900, unit: "Banha de Porco", approx: { colher: 12 } },
-            
-            // ==================== BEBIDAS ====================
-            "cafe": { c: 0, p: 0.1, f: 0, kcal: 2, unit: "Café (Sem Açúcar)", approx: { xicara: 50, colher: 15 } },
-            "café": { c: 0, p: 0.1, f: 0, kcal: 2, unit: "Café (Sem Açúcar)", approx: { xicara: 50, colher: 15 } },
-            "cha verde": { c: 0, p: 0, f: 0, kcal: 1, unit: "Chá Verde (Sem Açúcar)", approx: { xicara: 200 } },
-            "chá verde": { c: 0, p: 0, f: 0, kcal: 1, unit: "Chá Verde (Sem Açúcar)", approx: { xicara: 200 } },
-            "agua de coco": { c: 3.7, p: 0.7, f: 0.2, kcal: 19, unit: "Água de Coco", approx: { copo: 200, caixinha: 330 } },
-            "água de coco": { c: 3.7, p: 0.7, f: 0.2, kcal: 19, unit: "Água de Coco", approx: { copo: 200, caixinha: 330 } },
-            "monster": { c: 2, p: 0, f: 0, kcal: 10, unit: "Monster Zero (Lata)", approx: { lata: 1, unidade: 1 } },
-            "monster zero": { c: 2, p: 0, f: 0, kcal: 10, unit: "Monster Zero (Lata)", approx: { lata: 1, unidade: 1 } },
-            "refrigerante zero": { c: 0, p: 0, f: 0, kcal: 0, unit: "Refrigerante Zero", approx: { copo: 200, lata: 350 } },
-            "suco de laranja": { c: 11, p: 0.7, f: 0.2, kcal: 45, unit: "Suco de Laranja Natural", approx: { copo: 200 } }
-        };
+    // ==================== CARBOIDRATOS ====================
+    // Arroz e Cereais
+    "arroz": { c: 28.1, p: 2.5, f: 0.2, kcal: 129, unit: "Arroz Branco (Cozido) - 100g", approx: { colher: 25, escumadeira: 80, xicara: 150 } },
+    "arroz branco": { c: 28.1, p: 2.5, f: 0.2, kcal: 129, unit: "Arroz Branco (Cozido) - 100g", approx: { colher: 25, escumadeira: 80 } },
+    "arroz integral": { c: 25.8, p: 2.6, f: 1.0, kcal: 123, unit: "Arroz Integral (Cozido) - 100g", approx: { colher: 25, escumadeira: 80 } },
+    
+    // Aveia
+    "aveia": { c: 66.6, p: 13.9, f: 8.5, kcal: 394, unit: "Aveia em Flocos - 100g", approx: { colher: 15, xicara: 80 } },
+    "aveia colher": { c: 10, p: 2.1, f: 1.3, kcal: 59, unit: "Aveia (1 Colher Sopa) - 15g", approx: { colher: 15 } },
+    "1 colher aveia": { c: 10, p: 2.1, f: 1.3, kcal: 59, unit: "Aveia (1 Colher Sopa) - 15g", approx: { colher: 15 } },
+    
+    // Tubérculos
+    "batata": { c: 20.1, p: 1.7, f: 0.1, kcal: 86, unit: "Batata Inglesa (Cozida) - 100g", approx: { colher: 30, unidade: 150 } },
+    "batata inglesa": { c: 20.1, p: 1.7, f: 0.1, kcal: 86, unit: "Batata Inglesa (Cozida) - 100g", approx: { colher: 30, unidade: 150 } },
+    "batata doce": { c: 23.9, p: 1.3, f: 0.3, kcal: 103, unit: "Batata Doce (Cozida) - 100g", approx: { colher: 30, unidade: 150, rodelas: 40 } },
+    "mandioca": { c: 30.1, p: 0.6, f: 0.3, kcal: 125, unit: "Mandioca/Aipim (Cozida) - 100g", approx: { pedaco: 100, colher: 40 } },
+    "aipim": { c: 30.1, p: 0.6, f: 0.3, kcal: 125, unit: "Mandioca/Aipim (Cozida) - 100g", approx: { pedaco: 100, colher: 40 } },
+    
+    // Pães
+    "pao": { c: 29, p: 4.5, f: 0.5, kcal: 135, unit: "Pão Francês (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "pão": { c: 29, p: 4.5, f: 0.5, kcal: 135, unit: "Pão Francês (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "pao frances": { c: 29, p: 4.5, f: 0.5, kcal: 135, unit: "Pão Francês (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "pao de forma": { c: 11, p: 2.1, f: 0.9, kcal: 62, unit: "Pão de Forma (1 Fatia) - 25g", approx: { fatia: 25 } },
+    "pão de forma": { c: 11, p: 2.1, f: 0.9, kcal: 62, unit: "Pão de Forma (1 Fatia) - 25g", approx: { fatia: 25 } },
+    "tapioca": { c: 60, p: 0, f: 0, kcal: 240, unit: "Tapioca (Goma Pronta) - 100g", approx: { colher: 20, crepe: 100 } },
+    
+    // Macarrão (mantendo da base antiga)
+    "macarrao": { c: 30, p: 5, f: 1, kcal: 157, unit: "Macarrão (Cozido) - 100g", approx: { escumadeira: 90, pegador: 100, prato: 250 } },
+    "macarrão": { c: 30, p: 5, f: 1, kcal: 157, unit: "Macarrão (Cozido) - 100g", approx: { escumadeira: 90, pegador: 100 } },
+    
+    // ==================== PROTEÍNAS ====================
+    // Frango
+    "frango": { c: 0, p: 32.0, f: 2.5, kcal: 159, unit: "Peito de Frango (Grelhado) - 100g", approx: { bife: 120, file: 120, pedaco: 100, colher: 30 } },
+    "peito de frango": { c: 0, p: 32.0, f: 2.5, kcal: 159, unit: "Peito de Frango (Grelhado) - 100g", approx: { bife: 120, file: 120, pedaco: 100 } },
+    "frango grelhado": { c: 0, p: 32.0, f: 2.5, kcal: 159, unit: "Peito de Frango (Grelhado) - 100g", approx: { bife: 120, file: 120 } },
+    "frango desfiado": { c: 0, p: 31.0, f: 3.0, kcal: 151, unit: "Peito de Frango (Cozido/Desfiado) - 100g", approx: { colher: 30, xicara: 140 } },
+    "frango cozido": { c: 0, p: 31.0, f: 3.0, kcal: 151, unit: "Peito de Frango (Cozido/Desfiado) - 100g", approx: { colher: 30, xicara: 140 } },
+    
+    // Carnes Bovinas
+    "carne": { c: 0, p: 35.9, f: 7.3, kcal: 219, unit: "Patinho Moído (Refogado) - 100g", approx: { colher: 30, bife: 100, pedaco: 100 } },
+    "patinho": { c: 0, p: 35.9, f: 7.3, kcal: 219, unit: "Patinho Moído (Refogado) - 100g", approx: { colher: 30, bife: 100 } },
+    "carne moida": { c: 0, p: 35.9, f: 7.3, kcal: 219, unit: "Patinho Moído (Refogado) - 100g", approx: { colher: 30, bife: 100 } },
+    "bife": { c: 0, p: 32, f: 11, kcal: 240, unit: "Bife Alcatra/Contra (Grelhado) - 100g", approx: { unidade: 120, medio: 120, grande: 180 } },
+    "alcatra": { c: 0, p: 32, f: 11, kcal: 240, unit: "Bife Alcatra/Contra (Grelhado) - 100g", approx: { bife: 120, pedaco: 100 } },
+    "contra file": { c: 0, p: 32, f: 11, kcal: 240, unit: "Bife Alcatra/Contra (Grelhado) - 100g", approx: { bife: 120, pedaco: 100 } },
+    "filé mignon": { c: 0, p: 32, f: 8, kcal: 200, unit: "Filé Mignon (Grelhado) - 100g", approx: { bife: 120, medalhao: 80 } },
+    "file mignon": { c: 0, p: 32, f: 8, kcal: 200, unit: "Filé Mignon (Grelhado) - 100g", approx: { bife: 120, medalhao: 80 } },
+    
+    // Peixes
+    "tilapia": { c: 0, p: 24, f: 2.0, kcal: 115, unit: "Tilápia (Grelhada) - 100g", approx: { file: 120, pedaco: 100 } },
+    "tilápia": { c: 0, p: 24, f: 2.0, kcal: 115, unit: "Tilápia (Grelhada) - 100g", approx: { file: 120, pedaco: 100 } },
+    "file de tilapia": { c: 0, p: 24, f: 2.0, kcal: 115, unit: "Tilápia (Grelhada) - 100g", approx: { file: 120, pedaco: 100 } },
+    "filé de tilápia": { c: 0, p: 24, f: 2.0, kcal: 115, unit: "Tilápia (Grelhada) - 100g", approx: { file: 120, pedaco: 100 } },
+    "salmao": { c: 0, p: 24, f: 13, kcal: 220, unit: "Salmão (Grelhado) - 100g", approx: { file: 120, posta: 150, pedaco: 100 } },
+    "salmão": { c: 0, p: 24, f: 13, kcal: 220, unit: "Salmão (Grelhado) - 100g", approx: { file: 120, posta: 150, pedaco: 100 } },
+    "atum": { c: 0, p: 30, f: 1, kcal: 132, unit: "Atum (Conserva em Água) - 100g", approx: { lata: 140, colher: 30 } },
+    
+    // Ovos
+    "ovo": { c: 0.4, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Inteiro (1 Grande) - 50g", approx: { unidade: 50 } },
+    "1 ovo": { c: 0.4, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Inteiro (1 Grande) - 50g", approx: { unidade: 50 } },
+    "ovo grande": { c: 0.4, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Inteiro (1 Grande) - 50g", approx: { unidade: 50 } },
+    "clara": { c: 0.2, p: 3.6, f: 0, kcal: 17, unit: "Clara de Ovo (1 Unidade) - 35g", approx: { unidade: 35 } },
+    "claras": { c: 1, p: 11, f: 0, kcal: 50, unit: "Clara Pasteurizada (Líquida) - 100g", approx: { xicara: 240, colher: 15 } },
+    "clara liquida": { c: 1, p: 11, f: 0, kcal: 50, unit: "Clara Pasteurizada (Líquida) - 100g", approx: { xicara: 240 } },
+    "clara pasteurizada": { c: 1, p: 11, f: 0, kcal: 50, unit: "Clara Pasteurizada (Líquida) - 100g", approx: { xicara: 240 } },
+    "gema": { c: 0.6, p: 3, f: 5, kcal: 55, unit: "Gema de Ovo - 17g", approx: { unidade: 17 } },
+    
+    // Suplementos - CALIBRADO DR. CARLOS
+    "whey": { c: 4.0, p: 17, f: 1.2, kcal: 120, unit: "Whey MK Concentrado 56% (1 Scoop) - 30g", approx: { scoop: 30, dose: 30, colher: 15 } },
+    "whey mk": { c: 4.0, p: 17, f: 1.2, kcal: 120, unit: "Whey MK Concentrado 56% (1 Scoop) - 30g", approx: { scoop: 30, dose: 30 } },
+    "whey concentrado": { c: 4.0, p: 17, f: 1.2, kcal: 120, unit: "Whey MK Concentrado 56% (1 Scoop) - 30g", approx: { scoop: 30, dose: 30 } },
+    "whey padrao": { c: 2.5, p: 24, f: 1.0, kcal: 115, unit: "Whey Padrão 80% (1 Scoop) - 30g", approx: { scoop: 30, dose: 30 } },
+    "whey isolado": { c: 2.5, p: 24, f: 1.0, kcal: 115, unit: "Whey Padrão 80% (1 Scoop) - 30g", approx: { scoop: 30, dose: 30 } },
+    "1 scoop whey": { c: 4.0, p: 17, f: 1.2, kcal: 120, unit: "Whey MK Concentrado 56% (1 Scoop) - 30g", approx: { scoop: 30 } },
+    "creatina": { c: 0, p: 0, f: 0, kcal: 0, unit: "Creatina - 5g", approx: { colher: 5 } },
+    
+    // Queijos (mantendo os mais usados)
+    "queijo": { c: 2, p: 25, f: 30, kcal: 400, unit: "Queijo Mussarela - 100g", approx: { fatia: 20, pedaco: 30 } },
+    "mussarela": { c: 2, p: 25, f: 30, kcal: 400, unit: "Queijo Mussarela - 100g", approx: { fatia: 20, pedaco: 30 } },
+    "queijo cottage": { c: 3, p: 11, f: 4, kcal: 98, unit: "Queijo Cottage - 100g", approx: { colher: 30, pote: 200 } },
+    "cottage": { c: 3, p: 11, f: 4, kcal: 98, unit: "Queijo Cottage - 100g", approx: { colher: 30, pote: 200 } },
+    
+    // Leite e Iogurte
+    "leite": { c: 5, p: 3.2, f: 3.5, kcal: 61, unit: "Leite Integral - 100g", approx: { copo: 200, xicara: 240 } },
+    "leite desnatado": { c: 5, p: 3.4, f: 0.2, kcal: 35, unit: "Leite Desnatado - 100g", approx: { copo: 200, xicara: 240 } },
+    "iogurte": { c: 4, p: 3.5, f: 3, kcal: 61, unit: "Iogurte Natural - 100g", approx: { pote: 170, colher: 30 } },
+    "iogurte grego": { c: 4, p: 9, f: 5, kcal: 97, unit: "Iogurte Grego - 100g", approx: { pote: 170, colher: 30 } },
+    
+    // ==================== LEGUMINOSAS ====================
+    "feijao": { c: 13.6, p: 4.8, f: 0.5, kcal: 76, unit: "Feijão Carioca (Cozido/Caldo) - 100g", approx: { colher: 20, concha: 140 } },
+    "feijão": { c: 13.6, p: 4.8, f: 0.5, kcal: 76, unit: "Feijão Carioca (Cozido/Caldo) - 100g", approx: { colher: 20, concha: 140 } },
+    "feijao carioca": { c: 13.6, p: 4.8, f: 0.5, kcal: 76, unit: "Feijão Carioca (Cozido/Caldo) - 100g", approx: { colher: 20, concha: 140 } },
+    "1 concha feijao": { c: 19, p: 6.7, f: 0.7, kcal: 106, unit: "Feijão (1 Concha) - 140g", approx: { concha: 140 } },
+    "concha de feijao": { c: 19, p: 6.7, f: 0.7, kcal: 106, unit: "Feijão (1 Concha) - 140g", approx: { concha: 140 } },
+    "feijao preto": { c: 14, p: 4.5, f: 0.5, kcal: 77, unit: "Feijão Preto (Cozido) - 100g", approx: { colher: 20, concha: 140 } },
+    
+    // ==================== FRUTAS ====================
+    "maca": { c: 19.1, p: 0.3, f: 0.2, kcal: 72, unit: "Maçã Fuji (1 Média) - 130g", approx: { unidade: 130, media: 130 } },
+    "maçã": { c: 19.1, p: 0.3, f: 0.2, kcal: 72, unit: "Maçã Fuji (1 Média) - 130g", approx: { unidade: 130, media: 130 } },
+    "1 maca": { c: 19.1, p: 0.3, f: 0.2, kcal: 72, unit: "Maçã Fuji (1 Média) - 130g", approx: { unidade: 130 } },
+    "maca 100g": { c: 14, p: 0.3, f: 0.2, kcal: 52, unit: "Maçã - 100g", approx: { pedaco: 100 } },
+    "banana": { c: 18, p: 0.9, f: 0.2, kcal: 68, unit: "Banana Prata (1 Média) - 70g", approx: { unidade: 70, media: 70 } },
+    "1 banana": { c: 18, p: 0.9, f: 0.2, kcal: 68, unit: "Banana Prata (1 Média) - 70g", approx: { unidade: 70 } },
+    "banana prata": { c: 18, p: 0.9, f: 0.2, kcal: 68, unit: "Banana Prata (1 Média) - 70g", approx: { unidade: 70 } },
+    "pessego": { c: 10, p: 0.9, f: 0.3, kcal: 39, unit: "Pêssego (1 Médio) - 100g", approx: { unidade: 100 } },
+    "pêssego": { c: 10, p: 0.9, f: 0.3, kcal: 39, unit: "Pêssego (1 Médio) - 100g", approx: { unidade: 100 } },
+    "1 pessego": { c: 10, p: 0.9, f: 0.3, kcal: 39, unit: "Pêssego (1 Médio) - 100g", approx: { unidade: 100 } },
+    "mamao": { c: 15, p: 0.8, f: 0.2, kcal: 60, unit: "Mamão Papaya (Meio) - 140g", approx: { fatia: 100, colher: 40, meio: 140 } },
+    "mamão": { c: 15, p: 0.8, f: 0.2, kcal: 60, unit: "Mamão Papaya (Meio) - 140g", approx: { fatia: 100, colher: 40, meio: 140 } },
+    "meio mamao": { c: 15, p: 0.8, f: 0.2, kcal: 60, unit: "Mamão Papaya (Meio) - 140g", approx: { meio: 140 } },
+    
+    // Outras frutas comuns (mantendo da base antiga)
+    "morango": { c: 8, p: 0.7, f: 0.3, kcal: 32, unit: "Morango - 100g", approx: { unidade: 15, xicara: 150 } },
+    "abacate": { c: 9, p: 2, f: 15, kcal: 160, unit: "Abacate - 100g", approx: { colher: 30, unidade: 200 } },
+    "melancia": { c: 8, p: 0.6, f: 0.2, kcal: 30, unit: "Melancia - 100g", approx: { fatia: 200, pedaco: 100 } },
+    "laranja": { c: 12, p: 0.9, f: 0.1, kcal: 47, unit: "Laranja - 100g", approx: { unidade: 130, media: 130 } },
+    
+    // ==================== GORDURAS ====================
+    "azeite": { c: 0, p: 0, f: 13.5, kcal: 119, unit: "Azeite de Oliva (1 Colher Sopa) - 13ml", approx: { colher: 13, fio: 5 } },
+    "1 colher azeite": { c: 0, p: 0, f: 13.5, kcal: 119, unit: "Azeite de Oliva (1 Colher Sopa) - 13ml", approx: { colher: 13 } },
+    "azeite colher": { c: 0, p: 0, f: 13.5, kcal: 119, unit: "Azeite de Oliva (1 Colher Sopa) - 13ml", approx: { colher: 13 } },
+    "manteiga": { c: 0, p: 0, f: 4.1, kcal: 37, unit: "Manteiga (Ponta de Faca) - 5g", approx: { ponta: 5, colher: 10 } },
+    "ponta de faca manteiga": { c: 0, p: 0, f: 4.1, kcal: 37, unit: "Manteiga (Ponta de Faca) - 5g", approx: { ponta: 5 } },
+    "pasta de amendoim": { c: 3, p: 4, f: 8, kcal: 90, unit: "Pasta de Amendoim (1 Colher) - 15g", approx: { colher: 15 } },
+    "pasta amendoim": { c: 3, p: 4, f: 8, kcal: 90, unit: "Pasta de Amendoim (1 Colher) - 15g", approx: { colher: 15 } },
+    "1 colher pasta amendoim": { c: 3, p: 4, f: 8, kcal: 90, unit: "Pasta de Amendoim (1 Colher) - 15g", approx: { colher: 15 } },
+    
+    // Óleo (100g para cálculos)
+    "oleo": { c: 0, p: 0, f: 100, kcal: 884, unit: "Óleo de Cozinha - 100g", approx: { colher: 12, fio: 5 } },
+    "óleo": { c: 0, p: 0, f: 100, kcal: 884, unit: "Óleo de Cozinha - 100g", approx: { colher: 12, fio: 5 } },
+    
+    // ==================== VEGETAIS (Baixa Caloria - Mantendo alguns) ====================
+    "brocolis": { c: 7, p: 2.8, f: 0.4, kcal: 34, unit: "Brócolis (Cozido) - 100g", approx: { ramo: 50, colher: 30 } },
+    "brócolis": { c: 7, p: 2.8, f: 0.4, kcal: 34, unit: "Brócolis (Cozido) - 100g", approx: { ramo: 50, colher: 30 } },
+    "couve": { c: 9, p: 4.3, f: 0.9, kcal: 49, unit: "Couve (Crua) - 100g", approx: { folha: 30, colher: 20 } },
+    "alface": { c: 2.9, p: 1.4, f: 0.2, kcal: 15, unit: "Alface - 100g", approx: { folha: 20, prato: 50 } },
+    "tomate": { c: 3.9, p: 0.9, f: 0.2, kcal: 18, unit: "Tomate - 100g", approx: { unidade: 100, rodela: 20 } },
+    "cenoura": { c: 10, p: 0.9, f: 0.2, kcal: 41, unit: "Cenoura (Crua) - 100g", approx: { unidade: 80, rodela: 10 } },
+    "abobrinha": { c: 3.1, p: 1.2, f: 0.3, kcal: 17, unit: "Abobrinha (Cozida) - 100g", approx: { unidade: 150, rodela: 20 } },
+    
+    // ==================== BEBIDAS ====================
+    "cafe": { c: 0, p: 0.1, f: 0, kcal: 2, unit: "Café (Sem Açúcar) - 100g", approx: { xicara: 50, colher: 15 } },
+    "café": { c: 0, p: 0.1, f: 0, kcal: 2, unit: "Café (Sem Açúcar) - 100g", approx: { xicara: 50, colher: 15 } },
+    "agua de coco": { c: 3.7, p: 0.7, f: 0.2, kcal: 19, unit: "Água de Coco - 100g", approx: { copo: 200, caixinha: 330 } },
+    "água de coco": { c: 3.7, p: 0.7, f: 0.2, kcal: 19, unit: "Água de Coco - 100g", approx: { copo: 200, caixinha: 330 } },
+    "monster": { c: 2, p: 0, f: 0, kcal: 10, unit: "Monster Zero (Lata) - 100g", approx: { lata: 1, unidade: 1 } },
+    "monster zero": { c: 2, p: 0, f: 0, kcal: 10, unit: "Monster Zero (Lata) - 100g", approx: { lata: 1, unidade: 1 } },
+    "refrigerante zero": { c: 0, p: 0, f: 0, kcal: 0, unit: "Refrigerante Zero - 100g", approx: { copo: 200, lata: 350 } }
+};
+
 
         // --- FIREBASE SETUP ---
         const firebaseConfig = {
