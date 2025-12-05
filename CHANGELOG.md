@@ -1,5 +1,33 @@
 # MacroMixer - Changelog
 
+## v2.2 (2024-12-04 23:00) - CALIBRAÇÃO DR. CARLOS 🔬
+### 🎯 Base de Dados Calibrada E IMPLEMENTADA
+- **Whey Protein**: Corrigido para porção real (30g/scoop) com 2 versões
+  - Whey MK Concentrado 56%: 120 kcal, 17g prot
+  - Whey Padrão 80%: 115 kcal, 24g prot
+- **Carnes Grelhadas**: Ajustados valores de gordura (perda de água)
+  - Peito Frango: 159 kcal, 32g prot, 2.5g gord
+  - Filé Mignon: 200 kcal, 32g prot, 8g gord
+- **Frutas**: Adicionadas unidades práticas
+  - Maçã média (130g), Banana prata (70g), Pêssego (100g), Mamão meio (140g)
+- **Medidas Caseiras**: Aveia (1 colher), Feijão (1 concha)
+- **Gorduras**: Azeite (1 colher), Manteiga (ponta faca), Pasta amendoim (1 colher)
+- **Ovos**: Clara líquida pasteurizada adicionada
+- **Aliases Inteligentes**: "1 ovo", "1 banana", "1 colher aveia", "1 scoop whey"
+
+### 📊 Base Enxuta e Focada
+- **Antes**: 150+ alimentos (muitos raramente usados)
+- **Depois**: ~90 alimentos essenciais + aliases práticos
+- **Resultado**: Busca mais rápida e precisa
+
+### 📄 Documentação
+- ✅ `ALIMENTOS_DATABASE.json` atualizado (v2.2)
+- ✅ `CALIBRACAO_DR_CARLOS.md` criado com análise completa
+- ✅ Validação de calorias documentada
+- ✅ `foodDatabase` no app atualizado com valores calibrados
+
+---
+
 ## v2.1.1 (2024-12-04 22:15) - CORREÇÃO PWA 🔧
 ### 🐛 Correções
 - **PWA Fix**: Corrigidos caminhos relativos para Service Worker
