@@ -76,7 +76,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.2.3</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.2.4</span></h1>
             </div>
             <div id="auth-container" class="text-xs flex items-center gap-3">
                 <button id="theme-toggle" class="text-slate-400 hover:text-white transition-colors" title="Alternar tema">
@@ -1031,27 +1031,52 @@
                 fat: dailyLog.total.fat + tempMealAnalysis.totals.f
             };
 
+            // Limpa os foods para remover campos undefined ou complexos
+            const cleanFoods = tempMealAnalysis.foods.map(food => ({
+                name: food.name || "Desconhecido",
+                rawName: food.rawName || "",
+                qtd: food.qtd || 0,
+                unitDisplay: food.unitDisplay || "g",
+                macros: {
+                    p: food.macros?.p || 0,
+                    c: food.macros?.c || 0,
+                    f: food.macros?.f || 0,
+                    kcal: food.macros?.kcal || 0
+                },
+                error: food.error || false
+            }));
+
             const mealEntry = {
                 name: tempMealAnalysis.mealName || "Refeição",
                 timestamp: new Date().toISOString(),
-                foods: tempMealAnalysis.foods,
-                totals: tempMealAnalysis.totals,
-                isApproximate: tempMealAnalysis.isApproximate,
-                photo: currentMealPhoto || null
+                foods: cleanFoods,
+                totals: {
+                    p: tempMealAnalysis.totals.p || 0,
+                    c: tempMealAnalysis.totals.c || 0,
+                    f: tempMealAnalysis.totals.f || 0,
+                    kcal: tempMealAnalysis.totals.kcal || 0
+                },
+                isApproximate: tempMealAnalysis.isApproximate || false,
+                photo: currentMealPhoto || ""
             };
 
             const todayStr = new Date().toISOString().split('T')[0];
             const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
             
-            if (dailyLog.items.length === 0) {
-                await setDoc(docRef, { items: [mealEntry], total: newTotal });
-            } else {
-                await updateDoc(docRef, { items: arrayUnion(mealEntry), total: newTotal });
-            }
+            try {
+                if (dailyLog.items.length === 0) {
+                    await setDoc(docRef, { items: [mealEntry], total: newTotal });
+                } else {
+                    await updateDoc(docRef, { items: arrayUnion(mealEntry), total: newTotal });
+                }
                 
-            document.getElementById('meal-input').value = "";
-            document.getElementById('modal-result').classList.add('hidden');
-            removePhoto(); // Limpa foto após salvar
+                document.getElementById('meal-input').value = "";
+                document.getElementById('modal-result').classList.add('hidden');
+                removePhoto(); // Limpa foto após salvar
+            } catch (error) {
+                console.error('❌ Erro ao salvar refeição:', error);
+                alert('⚠️ Erro ao salvar refeição. Verifique o console para mais detalhes.');
+            }
         }
         
         async function resetDay() {
