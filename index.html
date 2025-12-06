@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💪 MacroMixer v3.3.5 - Dr. Carlos Edition</title>
+    <title>💪 MacroMixer v3.3.6 - Dr. Carlos Edition</title>
     <meta name="description" content="Rastreador profissional de calorias e macros - Dr. Carlos Edition">
     <meta name="theme-color" content="#06b6d4">
     <meta name="mobile-web-app-capable" content="yes">
@@ -78,7 +78,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v3.2.2</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v3.3.6</span></h1>
             </div>
             <div id="auth-container" class="text-xs flex items-center gap-3">
                 <button id="theme-toggle" class="text-slate-400 hover:text-white transition-colors" title="Alternar tema">
@@ -945,30 +945,23 @@
             }
         };
 
-        // Verifica se há resultado de redirect (para PWA)
-        // Usa flag temporária para evitar loops
-        const now = Date.now();
-        const lastCheck = localStorage.getItem('lastRedirectCheck');
+        // Verifica se há resultado de redirect (para PWA) - APENAS UMA VEZ POR SESSÃO
+        const redirectChecked = sessionStorage.getItem('redirectChecked');
         
-        // Só verifica se passou mais de 5 segundos desde a última verificação
-        if (!lastCheck || (now - parseInt(lastCheck)) > 5000) {
-            localStorage.setItem('lastRedirectCheck', now.toString());
-            console.log('🔍 Verificando resultado de redirect...');
+        if (!redirectChecked) {
+            sessionStorage.setItem('redirectChecked', 'true');
+            console.log('🔍 Verificando resultado de redirect (primeira vez nesta sessão)...');
             
             getRedirectResult(auth)
                 .then((result) => {
                     if (result) {
                         console.log('✅ Login via redirect bem-sucedido!', result.user);
-                        // Limpa a flag após sucesso
-                        localStorage.removeItem('lastRedirectCheck');
                     } else {
                         console.log('ℹ️ Nenhum redirect pendente');
                     }
                 })
                 .catch((error) => {
                     console.error('❌ Erro no redirect:', error);
-                    // Limpa a flag após erro
-                    localStorage.removeItem('lastRedirectCheck');
                     
                     if (error.code !== 'auth/popup-closed-by-user' && 
                         error.code !== 'auth/network-request-failed' &&
@@ -977,7 +970,7 @@
                     }
                 });
         } else {
-            console.log('⏭️ Pulando verificação de redirect (muito recente)');
+            console.log('⏭️ Redirect já verificado nesta sessão');
         }
 
         onAuthStateChanged(auth, (user) => {
@@ -1044,7 +1037,7 @@
         });
 
         function initAuth() {
-            console.log('=== MacroMixer v3.3.5 - Dr. Carlos Edition ===');
+            console.log('=== MacroMixer v3.3.6 - Dr. Carlos Edition ===');
             console.log('Firebase Auth:', auth);
             console.log('Verificando elementos...');
             console.log('btn-login existe?', document.getElementById('btn-login'));
@@ -1839,13 +1832,20 @@
         }
 
         function recalculateTotals() {
+            console.log('🔄 recalculateTotals chamado');
+            console.log('   Items antes:', dailyLog.items.length);
+            console.log('   Items:', dailyLog.items);
+            
             dailyLog.total = { cals: 0, prot: 0, carb: 0, fat: 0 };
             for (const item of dailyLog.items) {
+                console.log('   Somando item:', item.name, {cals: item.cals, prot: item.prot, carb: item.carb, fat: item.fat});
                 dailyLog.total.cals += item.cals || 0;
                 dailyLog.total.prot += item.prot || 0;
                 dailyLog.total.carb += item.carb || 0;
                 dailyLog.total.fat += item.fat || 0;
             }
+            
+            console.log('   Total calculado:', dailyLog.total);
         }
 
         // ==================== MODO ESCURO/CLARO ====================
