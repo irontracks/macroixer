@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💪 MacroMixer v3.4.1 - Dr. Carlos Edition</title>
+    <title>💪 MacroMixer v3.4.2 - Dr. Carlos Edition</title>
     <meta name="description" content="Rastreador profissional de calorias e macros - Dr. Carlos Edition">
     <meta name="theme-color" content="#06b6d4">
     <meta name="mobile-web-app-capable" content="yes">
@@ -80,7 +80,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v3.4.1</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v3.4.2</span></h1>
             </div>
             <div id="auth-container" class="text-xs flex items-center gap-3">
                 <button id="theme-toggle" class="text-slate-400 hover:text-white transition-colors" title="Alternar tema">
@@ -989,18 +989,14 @@
         console.log('🔵 Modo Offline Prioritário Ativado');
         console.log('   Firebase é opcional - app funciona sem login');
 
-        // CARREGA DADOS DO LOCALSTORAGE IMEDIATAMENTE (não espera Firebase)
-        console.log('📦 Carregando dados do localStorage (modo prioritário)...');
-        loadUserSettingsLocal();
-        loadDailyLogLocal();
-        updateDashboard();
-        renderLogs();
-        updateWaterDisplay();
+        // CARREGA DADOS DO LOCALSTORAGE será feito no final (depois das funções serem definidas)
+        console.log('🔵 Modo Offline Prioritário Ativado');
+        console.log('   Dados serão carregados após inicialização completa');
         
         // onAuthStateChanged será configurado DEPOIS dos event listeners (no final do código)
 
         function initAuth() {
-            console.log('=== MacroMixer v3.4.1 - OFFLINE FIRST Edition ===');
+            console.log('=== MacroMixer v3.4.2 - OFFLINE FIRST Edition ===');
             console.log('Firebase Auth:', auth);
             console.log('Verificando elementos...');
             console.log('btn-login existe?', document.getElementById('btn-login'));
@@ -3777,7 +3773,7 @@
         });
         
         // Initialize
-        console.log('🚀 === INICIALIZANDO APP v3.2.2 ===');
+        console.log('🚀 === INICIALIZANDO APP v3.4.1 ===');
         loadTheme();
         updateDateDisplay();
         loadNotificationSettings();
@@ -3787,6 +3783,15 @@
         loadAchievements();
         renderAchievements();
         showNotificationBanner();
+        
+        // CARREGA DADOS DO LOCALSTORAGE (agora que todas as funções estão definidas)
+        console.log('📦 Carregando dados do localStorage...');
+        loadUserSettingsLocal();
+        loadDailyLogLocal();
+        updateDashboard();
+        renderLogs();
+        updateWaterDisplay();
+        console.log('✅ Dados do localStorage carregados!');
         
         // Check notifications every minute
         setInterval(checkMealReminders, 60000);
