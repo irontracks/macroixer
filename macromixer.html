@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MacroMixer - Dr. Carlos Edition</title>
+    <title>💪 MacroMixer v3.3.0 - Dr. Carlos Edition</title>
     <meta name="description" content="Rastreador profissional de calorias e macros - Dr. Carlos Edition">
     <meta name="theme-color" content="#06b6d4">
     <meta name="mobile-web-app-capable" content="yes">
@@ -249,17 +249,25 @@
 
         <!-- Daily Log -->
         <section class="glass-panel rounded-xl p-4 shadow-lg pb-8">
-            <div class="flex justify-between items-center mb-4">
-                <div class="flex items-center gap-3">
-                    <button id="prev-day-btn" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-chevron-left"></i></button>
-                    <h2 id="current-date-display" class="text-gray-400 text-xs uppercase font-bold tracking-widest">Hoje</h2>
-                    <button id="next-day-btn" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
-                <div class="flex gap-2">
+            <div class="mb-4">
+                <div class="flex justify-between items-center mb-2">
+                    <div class="flex items-center gap-3">
+                        <button id="prev-day-btn" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-chevron-left"></i></button>
+                        <h2 id="current-date-display" class="text-gray-400 text-xs uppercase font-bold tracking-widest">Hoje</h2>
+                        <button id="next-day-btn" class="text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
                     <button id="share-day-btn" class="text-xs text-purple-400 hover:text-purple-300" title="Compartilhar dia"><i class="fa-solid fa-share-nodes"></i></button>
-                    <button id="copy-yesterday-btn" class="text-xs text-green-400 hover:text-green-300" title="Copiar refeições de ontem"><i class="fa-solid fa-copy mr-1"></i>Copiar</button>
-                    <button id="view-history-btn" class="text-xs text-cyan-400 hover:text-cyan-300"><i class="fa-solid fa-calendar-days mr-1"></i>Histórico</button>
-                    <button id="reset-day-btn" class="text-xs text-red-400 hover:text-red-300"><i class="fa-solid fa-trash mr-1"></i>Zerar</button>
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                    <button id="copy-yesterday-btn" class="flex-1 min-w-[100px] bg-green-700/30 hover:bg-green-700/50 text-green-400 text-xs font-bold py-2 px-3 rounded transition-all border border-green-700/50" title="Copiar refeições de ontem">
+                        <i class="fa-solid fa-copy mr-1"></i>Copiar Ontem
+                    </button>
+                    <button id="view-history-btn" class="flex-1 min-w-[100px] bg-cyan-700/30 hover:bg-cyan-700/50 text-cyan-400 text-xs font-bold py-2 px-3 rounded transition-all border border-cyan-700/50">
+                        <i class="fa-solid fa-calendar-days mr-1"></i>Histórico
+                    </button>
+                    <button id="reset-day-btn" class="flex-1 min-w-[100px] bg-red-700/30 hover:bg-red-700/50 text-red-400 text-xs font-bold py-2 px-3 rounded transition-all border border-red-700/50">
+                        <i class="fa-solid fa-trash mr-1"></i>Zerar Dia
+                    </button>
                 </div>
             </div>
             
@@ -319,7 +327,12 @@
                 <div class="text-3xl font-black text-white mb-1">
                     <span id="water-current">0</span><span class="text-lg text-slate-500">ml</span>
                 </div>
-                <div class="text-xs text-slate-400">Meta: <span id="water-goal">3000</span>ml</div>
+                <div class="text-xs text-slate-400 flex items-center justify-center gap-2">
+                    <span>Meta: <span id="water-goal">3000</span>ml</span>
+                    <button id="edit-water-goal-btn" class="text-blue-400 hover:text-blue-300" title="Editar meta">
+                        <i class="fa-solid fa-edit text-xs"></i>
+                    </button>
+                </div>
             </div>
             
             <div class="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-800 mb-4">
@@ -617,9 +630,15 @@
             <div class="px-4 pb-3">
                 <div class="flex items-center gap-2 mb-2">
                     <label for="meal-photo-input" class="flex-1 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold py-2 px-3 rounded transition-all cursor-pointer text-center border border-slate-700">
-                        <i class="fa-solid fa-camera mr-2"></i>Adicionar Foto
+                        <i class="fa-solid fa-image mr-2"></i>Galeria
                     </label>
-                    <input type="file" id="meal-photo-input" accept="image/*" capture="environment" class="hidden" />
+                    <input type="file" id="meal-photo-input" accept="image/*" class="hidden" />
+                    
+                    <label for="meal-camera-input" class="flex-1 bg-cyan-700 hover:bg-cyan-600 text-white text-xs font-bold py-2 px-3 rounded transition-all cursor-pointer text-center border border-cyan-600">
+                        <i class="fa-solid fa-camera mr-2"></i>Câmera
+                    </label>
+                    <input type="file" id="meal-camera-input" accept="image/*" capture="environment" class="hidden" />
+                    
                     <button id="remove-photo-btn" class="hidden bg-red-700 hover:bg-red-600 text-white text-xs font-bold py-2 px-3 rounded transition-all">
                         <i class="fa-solid fa-trash"></i>
                     </button>
@@ -656,7 +675,7 @@
     <!-- Firebase SDKs -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-storage.js";
 
@@ -724,10 +743,22 @@
     "salmão": { c: 0, p: 24, f: 13, kcal: 220, unit: "Salmão (Grelhado) - 100g", approx: { file: 120, posta: 150, pedaco: 100 } },
     "atum": { c: 0, p: 30, f: 1, kcal: 132, unit: "Atum (Conserva em Água) - 100g", approx: { lata: 140, colher: 30 } },
     
-    // Ovos
+    // Ovos - Completo
     "ovo": { c: 0.4, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Inteiro (1 Grande) - 50g", approx: { unidade: 50 } },
     "1 ovo": { c: 0.4, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Inteiro (1 Grande) - 50g", approx: { unidade: 50 } },
     "ovo grande": { c: 0.4, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Inteiro (1 Grande) - 50g", approx: { unidade: 50 } },
+    "ovo cozido": { c: 0.6, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Cozido (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "ovo cozinho": { c: 0.6, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Cozido (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "ovo frito": { c: 0.5, p: 6.3, f: 7.0, kcal: 92, unit: "Ovo Frito com Óleo (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "ovo frito sem oleo": { c: 0.5, p: 6.3, f: 5.2, kcal: 75, unit: "Ovo Frito Sem Óleo (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "ovo frito sem óleo": { c: 0.5, p: 6.3, f: 5.2, kcal: 75, unit: "Ovo Frito Sem Óleo (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "ovo mexido": { c: 0.6, p: 6.5, f: 7.5, kcal: 95, unit: "Ovo Mexido com Óleo (1 Unidade) - 55g", approx: { unidade: 55 } },
+    "ovo mexido sem oleo": { c: 0.6, p: 6.5, f: 5.3, kcal: 78, unit: "Ovo Mexido Sem Óleo (1 Unidade) - 55g", approx: { unidade: 55 } },
+    "ovo mexido sem óleo": { c: 0.6, p: 6.5, f: 5.3, kcal: 78, unit: "Ovo Mexido Sem Óleo (1 Unidade) - 55g", approx: { unidade: 55 } },
+    "ovo pochê": { c: 0.4, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Pochê (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "ovo poche": { c: 0.4, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Pochê (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "ovo quente": { c: 0.4, p: 6.3, f: 5.0, kcal: 72, unit: "Ovo Quente (1 Unidade) - 50g", approx: { unidade: 50 } },
+    "omelete": { c: 1.0, p: 7.0, f: 8.0, kcal: 105, unit: "Omelete Simples (1 Ovo) - 60g", approx: { unidade: 60 } },
     "clara": { c: 0.2, p: 3.6, f: 0, kcal: 17, unit: "Clara de Ovo (1 Unidade) - 35g", approx: { unidade: 35 } },
     "claras": { c: 1, p: 11, f: 0, kcal: 50, unit: "Clara Pasteurizada (Líquida) - 100g", approx: { xicara: 240, colher: 15 } },
     "clara liquida": { c: 1, p: 11, f: 0, kcal: 50, unit: "Clara Pasteurizada (Líquida) - 100g", approx: { xicara: 240 } },
@@ -902,15 +933,27 @@
         let macrosChart = null; // Gráfico de distribuição de macros
 
         // --- AUTH COM GOOGLE ---
+        // Detecta se está em modo standalone (PWA instalado)
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                            window.navigator.standalone || 
+                            document.referrer.includes('android-app://');
+        
         const handleLogin = async () => {
             console.log('🔵 Botão Entrar clicado!');
             console.log('Auth object:', auth);
             console.log('Google Provider:', googleProvider);
+            console.log('Modo standalone (PWA):', isStandalone);
             
             try {
-                console.log('Tentando abrir popup do Google...');
-                const result = await signInWithPopup(auth, googleProvider);
-                console.log('✅ Login bem-sucedido!', result.user);
+                // Se estiver em PWA/standalone, usa redirect em vez de popup
+                if (isStandalone) {
+                    console.log('Usando signInWithRedirect (PWA mode)...');
+                    await signInWithRedirect(auth, googleProvider);
+                } else {
+                    console.log('Usando signInWithPopup (browser mode)...');
+                    const result = await signInWithPopup(auth, googleProvider);
+                    console.log('✅ Login bem-sucedido!', result.user);
+                }
             } catch (error) {
                 console.error('❌ Erro no login:', error);
                 console.error('Error code:', error.code);
@@ -935,6 +978,20 @@
                 console.error('Erro no logout:', error);
             }
         };
+
+        // Verifica se há resultado de redirect (para PWA)
+        getRedirectResult(auth)
+            .then((result) => {
+                if (result) {
+                    console.log('✅ Login via redirect bem-sucedido!', result.user);
+                }
+            })
+            .catch((error) => {
+                console.error('❌ Erro no redirect:', error);
+                if (error.code !== 'auth/popup-closed-by-user') {
+                    alert(`Erro ao fazer login: ${error.message}`);
+                }
+            });
 
         onAuthStateChanged(auth, (user) => {
             console.log('🔄 onAuthStateChanged disparado');
@@ -967,10 +1024,12 @@
                 loadUserSettings();
                 loadDailyLog();
                 loadNotificationSettings();
+                loadAchievements();
+                renderAchievements();
             } else {
                 console.log('❌ Usuário não logado');
                 currentUser = null;
-                useLocalStorage = false;
+                useLocalStorage = true; // Ativa modo offline
                 
                 // Atualiza UI
                 const btnLogin = document.getElementById('btn-login');
@@ -986,11 +1045,19 @@
                 }
                 
                 console.log('UI atualizada - mostrando botão de login');
+                
+                // Carrega dados do localStorage (modo offline)
+                console.log('Carregando dados do localStorage (offline)...');
+                loadUserSettingsLocal();
+                loadDailyLogLocal();
+                updateDashboard();
+                renderLogs();
+                updateWaterDisplay();
             }
         });
 
         function initAuth() {
-            console.log('=== MacroMixer v1.2 - Com Google Auth ===');
+            console.log('=== MacroMixer v3.3.0 - Dr. Carlos Edition ===');
             console.log('Firebase Auth:', auth);
             console.log('Verificando elementos...');
             console.log('btn-login existe?', document.getElementById('btn-login'));
@@ -1636,6 +1703,22 @@
             }
         }
 
+        function editWaterGoal() {
+            const newGoal = prompt('💧 Digite a nova meta de água (em ml):', waterGoal);
+            if (newGoal === null) return; // Cancelou
+            
+            const goalNum = parseInt(newGoal);
+            if (isNaN(goalNum) || goalNum < 500 || goalNum > 10000) {
+                alert('⚠️ Meta inválida! Digite um valor entre 500ml e 10000ml.');
+                return;
+            }
+            
+            waterGoal = goalNum;
+            localStorage.setItem('macromixer_water_goal', waterGoal.toString());
+            updateWaterDisplay();
+            alert(`✅ Meta de água atualizada para ${waterGoal}ml!`);
+        }
+
         function resetWater() {
             if (confirm('Resetar contador de água?')) {
                 dailyLog.water = 0;
@@ -1805,8 +1888,12 @@
         }
 
         function updateWeightDisplay() {
+            // Elemento removido na v3.2.2 - função desabilitada
+            const weightInfoEl = document.getElementById('weight-info');
+            if (!weightInfoEl) return;
+            
             if (weightHistory.length === 0) {
-                document.getElementById('weight-info').innerHTML = '<i class="fa-solid fa-info-circle mr-1"></i>Registre seu peso diariamente';
+                weightInfoEl.innerHTML = '<i class="fa-solid fa-info-circle mr-1"></i>Registre seu peso diariamente';
                 return;
             }
             
@@ -1814,7 +1901,7 @@
             const initial = weightHistory[0];
             const diff = latest.weight - initial.weight;
             
-            document.getElementById('weight-info').innerHTML = `<i class="fa-solid fa-check-circle mr-1 text-green-400"></i><span class="text-green-400">Último: ${latest.weight}kg em ${new Date(latest.date).toLocaleDateString('pt-BR')}</span>`;
+            weightInfoEl.innerHTML = `<i class="fa-solid fa-check-circle mr-1 text-green-400"></i><span class="text-green-400">Último: ${latest.weight}kg em ${new Date(latest.date).toLocaleDateString('pt-BR')}</span>`;
             
             // Atualiza stats
             document.getElementById('weight-initial').innerText = initial.weight + 'kg';
@@ -2040,29 +2127,39 @@
         }
 
         function renderMacrosChart() {
-            const t = dailyLog.total;
+            const t = dailyLog.total || { prot: 0, carb: 0, fat: 0 };
             
             // Calcula calorias de cada macro
-            const protCals = t.prot * 4;
-            const carbCals = t.carb * 4;
-            const fatCals = t.fat * 9;
+            const protCals = (t.prot || 0) * 4;
+            const carbCals = (t.carb || 0) * 4;
+            const fatCals = (t.fat || 0) * 9;
             const totalCals = protCals + carbCals + fatCals;
             
+            const placeholderEl = document.getElementById('macros-chart-placeholder');
+            const containerEl = document.getElementById('macros-chart-container');
+            
             if (totalCals === 0) {
-                document.getElementById('macros-chart-placeholder').classList.remove('hidden');
-                document.getElementById('macros-chart-container').classList.add('hidden');
+                if (placeholderEl) placeholderEl.classList.remove('hidden');
+                if (containerEl) containerEl.classList.add('hidden');
                 return;
             }
+            
+            if (placeholderEl) placeholderEl.classList.add('hidden');
+            if (containerEl) containerEl.classList.remove('hidden');
             
             // Calcula percentuais
             const protPercent = ((protCals / totalCals) * 100).toFixed(1);
             const carbPercent = ((carbCals / totalCals) * 100).toFixed(1);
             const fatPercent = ((fatCals / totalCals) * 100).toFixed(1);
             
-            // Atualiza percentuais
-            document.getElementById('macro-prot-percent').textContent = protPercent + '%';
-            document.getElementById('macro-carb-percent').textContent = carbPercent + '%';
-            document.getElementById('macro-fat-percent').textContent = fatPercent + '%';
+            // Atualiza percentuais (com verificação de existência)
+            const protPercentEl = document.getElementById('macro-prot-percent');
+            const carbPercentEl = document.getElementById('macro-carb-percent');
+            const fatPercentEl = document.getElementById('macro-fat-percent');
+            
+            if (protPercentEl) protPercentEl.textContent = protPercent + '%';
+            if (carbPercentEl) carbPercentEl.textContent = carbPercent + '%';
+            if (fatPercentEl) fatPercentEl.textContent = fatPercent + '%';
             
             // Cria/atualiza gráfico
             const ctx = document.getElementById('macros-chart').getContext('2d');
@@ -2997,12 +3094,19 @@
                 `;
             } else {
                 galleryGrid.innerHTML = allPhotos.map(photo => `
-                    <div class="relative group cursor-pointer" onclick="window.open('${photo.url}', '_blank')">
-                        <img src="${photo.url}" alt="${photo.meal}" class="w-full h-32 object-cover rounded-lg border-2 border-slate-700 group-hover:border-pink-500 transition-all">
-                        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                    <div class="relative group">
+                        <img src="${photo.url}" alt="${photo.meal}" class="w-full h-32 object-cover rounded-lg border-2 border-slate-700 cursor-pointer" onclick="window.open('${photo.url}', '_blank')">
+                        <button 
+                            class="absolute top-2 right-2 bg-red-600 hover:bg-red-700 text-white w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-lg z-10"
+                            onclick="event.stopPropagation(); deletePhotoFromGallery(${photo.index}, '${photo.url}')"
+                            title="Deletar foto"
+                        >
+                            <i class="fa-solid fa-trash text-xs"></i>
+                        </button>
+                        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center pointer-events-none">
                             <i class="fa-solid fa-expand text-white text-2xl"></i>
                         </div>
-                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 rounded-b-lg">
+                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 rounded-b-lg pointer-events-none">
                             <div class="text-xs text-white font-bold truncate">${photo.meal}</div>
                             <div class="text-xs text-gray-300">${new Date(photo.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
                         </div>
@@ -3015,6 +3119,40 @@
 
         function closeGallery() {
             document.getElementById('gallery-modal').classList.add('hidden');
+        }
+
+        async function deletePhotoFromGallery(mealIndex, photoURL) {
+            if (!confirm('🗑️ Deletar esta foto? Esta ação não pode ser desfeita.')) return;
+            
+            try {
+                // Remove a foto do Firebase Storage (se for URL do Firebase)
+                if (photoURL && photoURL.includes('firebasestorage.googleapis.com')) {
+                    try {
+                        const photoRef = ref(storage, photoURL);
+                        await deleteObject(photoRef);
+                        console.log('✅ Foto deletada do Firebase Storage');
+                    } catch (storageError) {
+                        console.warn('⚠️ Erro ao deletar do Storage (pode já ter sido deletada):', storageError);
+                    }
+                }
+                
+                // Remove a foto da refeição
+                if (dailyLog.items[mealIndex]) {
+                    dailyLog.items[mealIndex].photo = null;
+                }
+                
+                // Salva no Firebase/localStorage
+                await saveDailyLogToDB();
+                
+                // Atualiza a UI
+                renderLogs();
+                openGallery(); // Recarrega a galeria
+                
+                alert('✅ Foto deletada com sucesso!');
+            } catch (error) {
+                console.error('❌ Erro ao deletar foto:', error);
+                alert('⚠️ Erro ao deletar foto. Tente novamente.');
+            }
         }
 
         function updateGalleryPreview() {
@@ -3411,15 +3549,15 @@
         document.getElementById('water-btn-250').addEventListener('click', () => addWater(250));
         document.getElementById('water-btn-500').addEventListener('click', () => addWater(500));
         document.getElementById('water-btn-1000').addEventListener('click', () => addWater(1000));
+        document.getElementById('edit-water-goal-btn').addEventListener('click', editWaterGoal);
         document.getElementById('copy-yesterday-btn').addEventListener('click', copyYesterday);
         document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
-        document.getElementById('save-weight-btn').addEventListener('click', saveWeight);
-        document.getElementById('toggle-weight-chart-btn').addEventListener('click', toggleWeightChart);
         document.getElementById('toggle-macros-chart-btn').addEventListener('click', toggleMacrosChart);
         document.getElementById('add-favorite-btn').addEventListener('click', saveFavoriteMeal);
         document.getElementById('open-gallery-btn').addEventListener('click', openGallery);
         document.getElementById('close-gallery-btn').addEventListener('click', closeGallery);
         document.getElementById('meal-photo-input').addEventListener('change', handlePhotoSelect);
+        document.getElementById('meal-camera-input').addEventListener('change', handlePhotoSelect);
         document.getElementById('remove-photo-btn').addEventListener('click', removePhoto);
         document.getElementById('share-day-btn').addEventListener('click', openShareModal);
         document.getElementById('close-share-modal').addEventListener('click', closeShareModal);
