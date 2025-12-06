@@ -76,7 +76,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.4.1</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v2.4.2</span></h1>
             </div>
             <div id="auth-container" class="text-xs flex items-center gap-3">
                 <button id="theme-toggle" class="text-slate-400 hover:text-white transition-colors" title="Alternar tema">
@@ -1024,7 +1024,10 @@
         }
 
         async function pushMealToDB() {
-            if (!currentUser || !tempMealAnalysis) return;
+            if (!tempMealAnalysis) {
+                alert('⚠️ Nenhuma refeição calculada. Clique em "Calcular" primeiro.');
+                return;
+            }
 
             // Função helper para garantir número válido
             const safeNumber = (val) => {
@@ -1070,29 +1073,43 @@
 
             console.log('📦 Dados a serem salvos:', JSON.stringify(mealEntry, null, 2));
 
-            const todayStr = new Date().toISOString().split('T')[0];
-            const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
+            // Atualiza dailyLog local
+            dailyLog.items.push(mealEntry);
+            dailyLog.total = newTotal;
             
-            try {
-                // Ao invés de arrayUnion, carrega o array atual e adiciona o novo item
-                const currentItems = dailyLog.items || [];
-                const updatedItems = [...currentItems, mealEntry];
-                
-                await setDoc(docRef, { 
-                    items: updatedItems, 
-                    total: newTotal,
-                    water: dailyLog.water || 0
-                }, { merge: true });
-                
-                console.log('✅ Refeição salva com sucesso!');
-                document.getElementById('meal-input').value = "";
-                document.getElementById('modal-result').classList.add('hidden');
-                removePhoto(); // Limpa foto após salvar
-            } catch (error) {
-                console.error('❌ Erro ao salvar refeição:', error);
-                console.error('📦 Dados que causaram erro:', mealEntry);
-                alert('⚠️ Erro ao salvar refeição. Verifique o console para mais detalhes.');
+            // Salva no Firebase ou localStorage
+            if (currentUser && !useLocalStorage) {
+                try {
+                    const todayStr = new Date().toISOString().split('T')[0];
+                    const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
+                    
+                    await setDoc(docRef, { 
+                        items: dailyLog.items, 
+                        total: newTotal,
+                        water: dailyLog.water || 0
+                    }, { merge: true });
+                    
+                    console.log('✅ Refeição salva no Firebase!');
+                } catch (error) {
+                    console.error('❌ Erro ao salvar no Firebase:', error);
+                    console.log('💾 Salvando no localStorage como fallback...');
+                    saveToLocalStorage();
+                }
+            } else {
+                console.log('💾 Salvando no localStorage (modo offline)');
+                saveToLocalStorage();
             }
+            
+            // Atualiza UI
+            renderLogs();
+            updateDashboard();
+            analyzeContext();
+            
+            document.getElementById('meal-input').value = "";
+            document.getElementById('modal-result').classList.add('hidden');
+            removePhoto(); // Limpa foto após salvar
+            
+            console.log('✅ Refeição adicionada com sucesso!');
         }
         
         async function resetDay() {
