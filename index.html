@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💪 MacroMixer v3.3.6 - Dr. Carlos Edition</title>
+    <title>💪 MacroMixer v3.3.7 - Dr. Carlos Edition</title>
     <meta name="description" content="Rastreador profissional de calorias e macros - Dr. Carlos Edition">
     <meta name="theme-color" content="#06b6d4">
     <meta name="mobile-web-app-capable" content="yes">
@@ -78,7 +78,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v3.3.6</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v3.3.7</span></h1>
             </div>
             <div id="auth-container" class="text-xs flex items-center gap-3">
                 <button id="theme-toggle" class="text-slate-400 hover:text-white transition-colors" title="Alternar tema">
@@ -163,6 +163,11 @@
                     </div>
                 </div>
                 <button type="submit" class="w-full bg-cyan-700 hover:bg-cyan-600 text-white font-bold py-3 rounded transition-all uppercase tracking-wider text-sm shadow-lg shadow-cyan-900/50">Salvar Calibragem</button>
+                
+                <!-- Clear Cache Button -->
+                <button type="button" id="clear-cache-btn" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2 rounded transition-all uppercase tracking-wider text-xs mt-2">
+                    <i class="fa-solid fa-trash-can mr-1"></i> Limpar Cache & Atualizar
+                </button>
             </form>
         </section>
 
@@ -1037,7 +1042,7 @@
         });
 
         function initAuth() {
-            console.log('=== MacroMixer v3.3.6 - Dr. Carlos Edition ===');
+            console.log('=== MacroMixer v3.3.7 - Dr. Carlos Edition ===');
             console.log('Firebase Auth:', auth);
             console.log('Verificando elementos...');
             console.log('btn-login existe?', document.getElementById('btn-login'));
@@ -3584,6 +3589,39 @@
         document.getElementById('goals-form').addEventListener('submit', saveUserSettings);
         document.getElementById('edit-goals-btn').addEventListener('click', () => document.getElementById('goals-section').classList.remove('hidden'));
         document.getElementById('close-goals-btn').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('goals-section').classList.add('hidden'); });
+        
+        // Clear Cache Button
+        document.getElementById('clear-cache-btn').addEventListener('click', async () => {
+            if (!confirm('⚠️ Isso vai limpar todo o cache e recarregar o app. Seus dados salvos NÃO serão perdidos. Continuar?')) return;
+            
+            try {
+                // Clear all caches
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(cacheNames.map(name => caches.delete(name)));
+                    console.log('✅ Cache limpo:', cacheNames);
+                }
+                
+                // Unregister all service workers
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(registrations.map(reg => reg.unregister()));
+                    console.log('✅ Service Workers removidos:', registrations.length);
+                }
+                
+                // Clear session storage
+                sessionStorage.clear();
+                console.log('✅ Session Storage limpo');
+                
+                alert('✅ Cache limpo com sucesso! O app será recarregado.');
+                
+                // Force reload from server
+                window.location.reload(true);
+            } catch (error) {
+                console.error('❌ Erro ao limpar cache:', error);
+                alert('❌ Erro ao limpar cache. Tente fechar e reabrir o app.');
+            }
+        });
         document.getElementById('btn-calculate').addEventListener('click', handleCalculate);
         document.getElementById('close-modal').addEventListener('click', () => document.getElementById('modal-result').classList.add('hidden'));
         document.getElementById('confirm-meal').addEventListener('click', pushMealToDB);
@@ -3685,11 +3723,30 @@
         
         initAuth();
         
-        // Register Service Worker (PWA)
+        // Register Service Worker (PWA) with forced update
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('./sw.js')
                 .then((registration) => {
                     console.log('✅ Service Worker registrado:', registration.scope);
+                    
+                    // Force update on page load
+                    registration.update();
+                    
+                    // Check for updates every 30 seconds
+                    setInterval(() => {
+                        registration.update();
+                    }, 30000);
+                    
+                    // Listen for new service worker
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'activated') {
+                                console.log('🔄 Nova versão disponível! Recarregando...');
+                                window.location.reload();
+                            }
+                        });
+                    });
                 })
                 .catch((error) => {
                     console.error('❌ Erro ao registrar Service Worker:', error);
