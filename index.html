@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>💪 MacroMixer v3.3.9 - Dr. Carlos Edition</title>
+    <title>💪 MacroMixer v3.4.0 - Dr. Carlos Edition</title>
     <meta name="description" content="Rastreador profissional de calorias e macros - Dr. Carlos Edition">
     <meta name="theme-color" content="#06b6d4">
     <meta name="mobile-web-app-capable" content="yes">
@@ -80,7 +80,7 @@
         <div class="max-w-md mx-auto flex justify-between items-center">
             <div class="flex items-center gap-2">
                 <i class="fa-solid fa-dna text-cyan-500 text-xl"></i>
-                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v3.3.9</span></h1>
+                <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-blue-600">MacroMixer <span class="text-xs text-gray-500 font-normal ml-1">v3.4.0</span></h1>
             </div>
             <div id="auth-container" class="text-xs flex items-center gap-3">
                 <button id="theme-toggle" class="text-slate-400 hover:text-white transition-colors" title="Alternar tema">
@@ -182,9 +182,20 @@
                 <i class="fa-solid fa-gear mr-1"></i> Setup
             </button>
             
-            <div class="flex items-center gap-2 mb-4">
-                <div class="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
-                <h2 class="text-cyan-500 text-xs uppercase font-bold tracking-widest">Painel de Controle</h2>
+            <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 bg-cyan-500 rounded-full animate-pulse"></div>
+                    <h2 class="text-cyan-500 text-xs uppercase font-bold tracking-widest">Painel de Controle</h2>
+                </div>
+                <div class="flex items-center gap-2 text-[10px]">
+                    <span id="sync-status" class="text-green-500">
+                        <i class="fa-solid fa-circle-check"></i> Salvo
+                    </span>
+                    <span class="text-slate-600">|</span>
+                    <span class="text-slate-400">
+                        <i class="fa-solid fa-hard-drive"></i> Modo Offline
+                    </span>
+                </div>
             </div>
 
             <!-- Calories Main -->
@@ -915,9 +926,17 @@
                             window.navigator.standalone || 
                             document.referrer.includes('android-app://');
         
-        let isLoggingIn = false; // Flag para evitar múltiplos cliques
+        let isLoggingIn = false;
+        let loginAttempts = 0;
+        const MAX_LOGIN_ATTEMPTS = 3;
         
         const handleLogin = async () => {
+            // Proteção contra loops infinitos
+            if (loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+                alert('⚠️ MUITAS TENTATIVAS DE LOGIN\n\nO login foi bloqueado temporariamente.\nRecarregue a página e tente novamente.\n\n💡 DICA: O app funciona 100% sem login!');
+                return;
+            }
+            
             // Previne múltiplos cliques
             if (isLoggingIn) {
                 console.log('⚠️ Login já em andamento, aguarde...');
@@ -930,39 +949,28 @@
                 return;
             }
             
+            loginAttempts++;
             isLoggingIn = true;
-            console.log('🔵 Botão Entrar clicado!');
-            console.log('Auth object:', auth);
-            console.log('Google Provider:', googleProvider);
-            console.log('Modo standalone (PWA):', isStandalone);
+            console.log(`🔵 Tentativa de login #${loginAttempts}/${MAX_LOGIN_ATTEMPTS}`);
             
             try {
-                // Se estiver em PWA/standalone, usa redirect em vez de popup
-                if (isStandalone) {
-                    console.log('Usando signInWithRedirect (PWA mode)...');
-                    // Marca que está fazendo redirect
-                    sessionStorage.setItem('loginInProgress', 'true');
-                    await signInWithRedirect(auth, googleProvider);
-                } else {
-                    console.log('Usando signInWithPopup (browser mode)...');
-                    const result = await signInWithPopup(auth, googleProvider);
-                    console.log('✅ Login bem-sucedido!', result.user);
-                    isLoggingIn = false;
-                }
+                // SEMPRE usa popup (mais confiável que redirect)
+                console.log('Usando signInWithPopup...');
+                const result = await signInWithPopup(auth, googleProvider);
+                console.log('✅ Login bem-sucedido!', result.user);
+                isLoggingIn = false;
+                loginAttempts = 0; // Reset contador
             } catch (error) {
                 isLoggingIn = false;
                 console.error('❌ Erro no login:', error);
-                console.error('Error code:', error.code);
-                console.error('Error message:', error.message);
                 
-                if (error.code === 'auth/unauthorized-domain') {
-                    alert(`⚠️ DOMÍNIO NÃO AUTORIZADO\n\nO domínio "${window.location.hostname}" não está autorizado no Firebase.\n\nPara corrigir:\n1. Acesse: console.firebase.google.com\n2. Vá em Authentication > Settings > Authorized domains\n3. Adicione: ${window.location.hostname}\n4. Salve e tente novamente`);
-                } else if (error.code === 'auth/popup-blocked') {
-                    alert('⚠️ POPUP BLOQUEADO\n\nSeu navegador bloqueou o popup de login.\nPermita popups para este site e tente novamente.');
-                } else if (error.code === 'auth/popup-closed-by-user') {
+                if (error.code === 'auth/popup-closed-by-user') {
                     console.log('Usuário fechou o popup');
+                    loginAttempts--; // Não conta como tentativa falhada
+                } else if (error.code === 'auth/popup-blocked') {
+                    alert('⚠️ POPUP BLOQUEADO\n\nSeu navegador bloqueou o popup de login.\n\n💡 DICA: O app funciona 100% sem login!');
                 } else {
-                    alert(`Erro ao fazer login: ${error.message}`);
+                    alert(`❌ Erro ao fazer login: ${error.message}\n\n💡 DICA: O app funciona 100% sem login!`);
                 }
             }
         };
@@ -975,59 +983,31 @@
             }
         };
 
-        // Verifica se há resultado de redirect (para PWA) - APENAS UMA VEZ POR SESSÃO
-        // IMPORTANTE: Usa flag no localStorage com timestamp para evitar loops
-        const lastRedirectCheck = localStorage.getItem('lastRedirectCheck');
-        const now = Date.now();
-        const FIVE_MINUTES = 5 * 60 * 1000;
-        
-        // Só verifica redirect se:
-        // 1. Nunca verificou antes OU
-        // 2. Última verificação foi há mais de 5 minutos
-        if (!lastRedirectCheck || (now - parseInt(lastRedirectCheck)) > FIVE_MINUTES) {
-            localStorage.setItem('lastRedirectCheck', now.toString());
-            console.log('🔍 Verificando resultado de redirect...');
-            
-            getRedirectResult(auth)
-                .then((result) => {
-                    if (result) {
-                        console.log('✅ Login via redirect bem-sucedido!', result.user);
-                        // Limpa a flag após sucesso
-                        localStorage.removeItem('lastRedirectCheck');
-                    } else {
-                        console.log('ℹ️ Nenhum redirect pendente');
-                    }
-                })
-                .catch((error) => {
-                    console.error('❌ Erro no redirect:', error);
-                    
-                    // Limpa a flag em caso de erro para permitir nova tentativa
-                    localStorage.removeItem('lastRedirectCheck');
-                    
-                    if (error.code !== 'auth/popup-closed-by-user' && 
-                        error.code !== 'auth/network-request-failed' &&
-                        error.code !== 'auth/internal-error') {
-                        alert(`Erro ao fazer login: ${error.message}`);
-                    }
-                });
-        } else {
-            console.log('⏭️ Redirect verificado recentemente (aguardando 5min)');
-        }
+        // SOLUÇÃO ALTERNATIVA: Desabilita getRedirectResult completamente
+        // O app funcionará 100% offline com localStorage
+        // Login com Firebase é OPCIONAL e não bloqueia o funcionamento
+        console.log('🔵 Modo Offline Prioritário Ativado');
+        console.log('   Firebase é opcional - app funciona sem login');
 
+        // CARREGA DADOS DO LOCALSTORAGE IMEDIATAMENTE (não espera Firebase)
+        console.log('📦 Carregando dados do localStorage (modo prioritário)...');
+        loadUserSettingsLocal();
+        loadDailyLogLocal();
+        updateDashboard();
+        renderLogs();
+        updateWaterDisplay();
+        
+        // Firebase é OPCIONAL - apenas sincroniza se usuário fizer login
         onAuthStateChanged(auth, (user) => {
-            console.log('🔄 onAuthStateChanged disparado');
+            console.log('🔄 onAuthStateChanged disparado (modo opcional)');
             console.log('User:', user);
             
             if (user) {
-                console.log('✅ Usuário logado:', user.displayName || user.email);
+                console.log('✅ Usuário logado (Firebase ativo):', user.displayName || user.email);
                 console.log('UID:', user.uid);
                 currentUser = user;
-                useLocalStorage = false;
-                isLoggingIn = false; // Limpa flag de login
-                
-                // Limpa flags de login em progresso
-                sessionStorage.removeItem('loginInProgress');
-                localStorage.removeItem('lastRedirectCheck');
+                useLocalStorage = false; // Usa Firebase como backup
+                isLoggingIn = false;
                 
                 // Atualiza UI
                 const btnLogin = document.getElementById('btn-login');
@@ -1043,20 +1023,23 @@
                     usernameDisplay.innerText = user.displayName || user.email || 'Usuário';
                 }
                 
-                console.log('UI atualizada - mostrando status do usuário');
+                console.log('🔄 Sincronizando com Firebase (opcional)...');
                 
-                // Carrega dados do Firebase
-                console.log('Carregando dados do Firebase...');
-                loadUserSettings();
-                loadDailyLog();
-                loadNotificationSettings();
-                loadAchievements();
-                renderAchievements();
+                // Sincroniza com Firebase (mas não bloqueia se falhar)
+                try {
+                    loadUserSettings();
+                    loadDailyLog();
+                    loadNotificationSettings();
+                    loadAchievements();
+                    renderAchievements();
+                } catch (error) {
+                    console.warn('⚠️ Erro ao sincronizar com Firebase (continuando offline):', error);
+                }
             } else {
-                console.log('❌ Usuário não logado');
+                console.log('ℹ️ Modo offline (sem Firebase)');
                 currentUser = null;
-                useLocalStorage = true; // Ativa modo offline
-                isLoggingIn = false; // Limpa flag de login
+                useLocalStorage = true;
+                isLoggingIn = false;
                 
                 // Atualiza UI
                 const btnLogin = document.getElementById('btn-login');
@@ -1071,20 +1054,13 @@
                     userStatus.classList.remove('flex');
                 }
                 
-                console.log('UI atualizada - mostrando botão de login');
-                
-                // Carrega dados do localStorage (modo offline)
-                console.log('Carregando dados do localStorage (offline)...');
-                loadUserSettingsLocal();
-                loadDailyLogLocal();
-                updateDashboard();
-                renderLogs();
-                updateWaterDisplay();
+                // Dados já foram carregados do localStorage no início
+                console.log('✅ App funcionando 100% offline');
             }
         });
 
         function initAuth() {
-            console.log('=== MacroMixer v3.3.9 - Dr. Carlos Edition ===');
+            console.log('=== MacroMixer v3.4.0 - OFFLINE FIRST Edition ===');
             console.log('Firebase Auth:', auth);
             console.log('Verificando elementos...');
             console.log('btn-login existe?', document.getElementById('btn-login'));
@@ -1446,18 +1422,17 @@
             dailyLog.items.push(mealEntry);
             dailyLog.total = newTotal;
             
-            // Salva no Firebase ou localStorage
-            console.log('🔍 Verificando onde salvar:');
-            console.log('   currentUser:', currentUser ? currentUser.uid : 'null');
-            console.log('   useLocalStorage:', useLocalStorage);
+            // SEMPRE salva no localStorage PRIMEIRO (prioridade)
+            const todayStr = new Date().toISOString().split('T')[0];
+            console.log('💾 Salvando no localStorage (PRIORIDADE)...');
+            saveToLocalStorage(`log_${todayStr}`, dailyLog);
+            console.log('✅ Salvo no localStorage com sucesso!');
             
+            // Tenta sincronizar com Firebase (opcional, não bloqueia)
             if (currentUser && !useLocalStorage) {
                 try {
-                    const todayStr = new Date().toISOString().split('T')[0];
                     const docRef = doc(db, 'users', currentUser.uid, 'daily_logs', todayStr);
-                    
-                    console.log('🔥 Salvando no Firebase...');
-                    console.log('   Documento:', `users/${currentUser.uid}/daily_logs/${todayStr}`);
+                    console.log('🔄 Sincronizando com Firebase (opcional)...');
                     
                     await setDoc(docRef, { 
                         items: dailyLog.items, 
@@ -1465,19 +1440,13 @@
                         water: dailyLog.water || 0
                     }, { merge: true });
                     
-                    console.log('✅ Refeição salva no Firebase com sucesso!');
+                    console.log('✅ Sincronizado com Firebase!');
                 } catch (error) {
-                    console.error('❌ Erro ao salvar no Firebase:', error);
-                    console.error('   Detalhes:', error.message);
-                    console.log('💾 Salvando no localStorage como fallback...');
-                    const todayStr = new Date().toISOString().split('T')[0];
-                    saveToLocalStorage(`log_${todayStr}`, dailyLog);
+                    console.warn('⚠️ Erro ao sincronizar com Firebase (continuando offline):', error);
+                    // Não mostra erro ao usuário - app continua funcionando
                 }
             } else {
-                console.log('💾 Salvando no localStorage (modo offline)');
-                console.log('   Motivo:', !currentUser ? 'Usuário não logado' : 'useLocalStorage = true');
-                const todayStr = new Date().toISOString().split('T')[0];
-                saveToLocalStorage(`log_${todayStr}`, dailyLog);
+                console.log('ℹ️ Firebase desabilitado - usando apenas localStorage');
             }
             
             // Atualiza UI
