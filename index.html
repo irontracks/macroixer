@@ -2698,14 +2698,9 @@
             `;
         }
 
-        // --- NOTIFICATION FUNCTIONS ---
-        function requestNotificationPermission() {
-            if ('Notification' in window && Notification.permission === 'default') {
-                Notification.requestPermission();
-            }
-        }
-
-        function showNotification(title, body) {
+        // --- NOTIFICATION FUNCTIONS (OLD - REMOVED, SEE PUSH NOTIFICATIONS SECTION BELOW) ---
+        
+        function showNotificationOld(title, body) {
             if ('Notification' in window && Notification.permission === 'granted') {
                 new Notification(title, {
                     body: body,
