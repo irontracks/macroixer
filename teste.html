@@ -327,6 +327,17 @@
                     <div class="text-[10px] text-slate-500">/<span id="target-fat">0</span></div>
                 </div>
             </div>
+
+            <!-- Dr. Carlos Bot (Moved inside Panel) -->
+            <div id="suggestion-box" class="hidden mt-4 bg-slate-900/50 border-l-4 border-cyan-500 p-3 rounded-lg text-sm text-gray-300 relative z-10 backdrop-blur-sm">
+                <div class="flex items-start gap-3">
+                    <i class="fa-solid fa-user-doctor text-cyan-400 text-lg mt-1"></i> 
+                    <div>
+                        <span class="block text-xs text-cyan-500 font-bold uppercase mb-1">Dr. Carlos Bot</span>
+                        <span id="suggestion-text">Analisando dados...</span>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Input Section -->
@@ -519,8 +530,8 @@
             </div>
         </section>
 
-        <!-- Achievements/Badges -->
-        <section class="glass-panel rounded-xl p-4 shadow-lg border-l-4 border-yellow-500">
+        <!-- Achievements/Badges (Hidden but active for notifications) -->
+        <section class="glass-panel rounded-xl p-4 shadow-lg border-l-4 border-yellow-500 hidden">
             <div class="flex justify-between items-center mb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-trophy text-yellow-400 text-lg"></i>
@@ -534,16 +545,7 @@
             </div>
         </section>
 
-        <!-- Suggestion Box (Dynamic) -->
-        <div id="suggestion-box" class="hidden bg-slate-800 border-l-4 border-cyan-500 p-4 rounded text-sm text-gray-300 shadow-lg">
-            <div class="flex items-start gap-3">
-                <i class="fa-solid fa-user-doctor text-cyan-400 text-lg mt-1"></i> 
-                <div>
-                    <span class="block text-xs text-cyan-500 font-bold uppercase mb-1">Dr. Carlos Bot</span>
-                    <span id="suggestion-text">Analisando dados...</span>
-                </div>
-            </div>
-        </div>
+
 
         <!-- Share Modal -->
         <div id="share-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
