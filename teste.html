@@ -51,26 +51,93 @@
 
         /* LIGHT MODE */
         body.light-mode {
-            background-color: #f1f5f9; /* Slate 100 */
-            color: #1e293b; /* Slate 800 */
+            background-color: #f8fafc; /* Slate 50 - Lighter background */
+            color: #334155; /* Slate 700 */
         }
         body.light-mode .glass-panel {
-            background: rgba(255, 255, 255, 0.8);
-            border: 1px solid rgba(203, 213, 225, 0.6);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
-        body.light-mode ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+        
+        /* Light Mode Overrides for Specific Elements */
+        body.light-mode .text-white { color: #1e293b !important; } /* Inverte texto branco para escuro */
+        body.light-mode .text-gray-400 { color: #64748b !important; } /* Escurece cinza claro */
+        body.light-mode .text-slate-400 { color: #64748b !important; }
+        body.light-mode .text-slate-500 { color: #475569 !important; }
+        
+        /* Inputs & Textareas */
+        body.light-mode input, 
+        body.light-mode textarea,
+        body.light-mode select {
+            background-color: #f1f5f9 !important; /* Slate 100 */
+            border-color: #cbd5e1 !important;
+            color: #1e293b !important;
         }
-        body.light-mode ::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
+        body.light-mode input:focus, 
+        body.light-mode textarea:focus {
+            background-color: #ffffff !important;
+            border-color: #06b6d4 !important; /* Cyan 500 */
         }
-        body.light-mode ::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
+
+        /* Macro Cards Backgrounds */
+        body.light-mode .bg-slate-800\/50,
+        body.light-mode .bg-slate-800\/30 {
+            background-color: #f1f5f9 !important;
+            border-color: #e2e8f0 !important;
         }
+
+        /* Progress Bar Tracks */
+        body.light-mode .bg-slate-900 {
+            background-color: #e2e8f0 !important; /* Slate 200 instead of 900 */
+        }
+        
+        /* Scrollbar */
+        body.light-mode ::-webkit-scrollbar-track { background: #f1f5f9; }
+        body.light-mode ::-webkit-scrollbar-thumb { background: #cbd5e1; }
+        body.light-mode ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* Navbar */
         body.light-mode nav {
             background-color: #ffffff !important;
             border-bottom-color: #e2e8f0 !important;
         }
+        body.light-mode nav h1 {
+            /* Mantém gradiente ou ajusta se necessário, mas o texto base muda */
+        }
+        body.light-mode nav #auth-container button {
+            color: #475569;
+        }
+        body.light-mode nav #auth-container button:hover {
+            color: #0f172a;
+        }
+        body.light-mode nav #btn-login {
+            background-color: #f1f5f9 !important;
+            color: #1e293b !important;
+            border-color: #cbd5e1 !important;
+        }
+        
+        /* List Items */
+        body.light-mode .bg-slate-800 {
+            background-color: #ffffff !important;
+            border-color: #e2e8f0 !important;
+        }
+        body.light-mode .divide-slate-700 > :not([hidden]) ~ :not([hidden]) {
+            border-color: #e2e8f0 !important;
+        }
+
+        /* Fix Preset Buttons Text in Light Mode (keep them readable on colored bg) */
+        body.light-mode .preset-btn .text-white { color: #ffffff !important; } /* Mantém branco nos botões coloridos */
+        body.light-mode .preset-btn .text-red-300 { color: #fca5a5 !important; }
+        body.light-mode .preset-btn .text-slate-300 { color: #cbd5e1 !important; }
+        body.light-mode .preset-btn .text-emerald-300 { color: #6ee7b7 !important; }
+        body.light-mode button[class*="bg-cyan"] { color: #ffffff !important; } /* Botões primários mantêm texto branco */
+        body.light-mode button[class*="bg-red"] { color: #ffffff !important; } /* Botões perigo mantêm texto branco */
+        body.light-mode button[class*="bg-green"] { color: #ffffff !important; } 
+        body.light-mode .bg-green-700\/30 { background-color: #dcfce7 !important; border-color: #86efac !important; color: #15803d !important; }
+        body.light-mode .bg-cyan-900\/30 { background-color: #cffafe !important; border-color: #67e8f9 !important; color: #0e7490 !important; }
+        body.light-mode .bg-red-900\/30 { background-color: #fee2e2 !important; border-color: #fca5a5 !important; color: #b91c1c !important; }
+
     </style>
 </head>
 <body class="min-h-screen flex flex-col items-center pb-10">
