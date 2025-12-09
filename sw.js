@@ -125,10 +125,3 @@ self.addEventListener('notificationclick', (event) => {
     clients.openWindow('./index.html')
   );
 });
-
-
-
-
-
-
-
