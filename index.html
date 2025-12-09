@@ -13,7 +13,7 @@
     <link rel="manifest" href="./manifest.json">
     
     <!-- iOS Icons - Apple requer arquivo PNG sem transparência -->
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+    <link rel="apple-touch-icon" href="./icon-192.png">
     
     <!-- Padrão Android/PWA -->
     <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
@@ -3522,13 +3522,29 @@
             console.log("Iniciando geração de relatório diário profissional...");
             try {
                 // 1. Prepare Data with Safety Checks
-                const today = new Date();
-                const dateStr = today.toLocaleDateString('pt-BR');
+                // Use currentViewDate instead of new Date() to match the data being shown
+                const reportDate = currentViewDate || new Date();
+                const dateStr = reportDate.toLocaleDateString('pt-BR');
                 
                 // Safety checks for global variables
                 const totals = (dailyLog && dailyLog.total) ? dailyLog.total : { cals: 0, prot: 0, carb: 0, fat: 0 };
                 const goals = userSettings || { cals: 2000, prot: 150, carb: 200, fat: 60 };
-                const items = (dailyLog && dailyLog.items) ? dailyLog.items : [];
+                let items = (dailyLog && dailyLog.items) ? dailyLog.items : [];
+                
+                // Fallback: If items are empty, try to reload from localStorage for the current view date
+                // This fixes the issue where PDF shows "No meals" even if they exist in storage
+                if (items.length === 0) {
+                    try {
+                        const dateKey = getLocalISODate(reportDate);
+                        const saved = loadFromLocalStorage(`log_${dateKey}`);
+                        if (saved && saved.items && saved.items.length > 0) {
+                             console.log("⚠️ Recuperando itens do localStorage para o relatório.");
+                             items = saved.items;
+                        }
+                    } catch (e) {
+                        console.warn("Erro ao tentar recuperar backup do localStorage:", e);
+                    }
+                }
                 
                 // Get Phrase
                 let phrase = "Mantenha o foco nos seus objetivos!";
@@ -3546,9 +3562,23 @@
                 }
                 
                 // Helper to guess meal name based on time
-                const getMealLabel = (time) => {
-                    if (!time) return "Refeição";
-                    const hour = parseInt(time.split(':')[0]);
+                const getMealLabel = (item) => {
+                    let hour;
+                    // Priority: item.time (HH:MM) -> item.timestamp (ISO)
+                    if (item.time && typeof item.time === 'string' && item.time.includes(':')) {
+                        hour = parseInt(item.time.split(':')[0]);
+                    } else if (item.timestamp) {
+                        try {
+                            hour = new Date(item.timestamp).getHours();
+                        } catch (e) {
+                            return "Outros";
+                        }
+                    } else {
+                        return "Outros";
+                    }
+                    
+                    if (isNaN(hour)) return "Outros";
+
                     if (hour >= 5 && hour < 10) return "Café da Manhã";
                     if (hour >= 10 && hour < 12) return "Lanche da Manhã";
                     if (hour >= 12 && hour < 15) return "Almoço";
@@ -3624,7 +3654,7 @@
                 let mealsHtml = '<div class="space-y-6">';
                 
                 // Define standard meal order and grouping
-                const mealOrder = ["Café da Manhã", "Lanche da Manhã", "Almoço", "Café da Tarde", "Jantar", "Ceia / Lanche"];
+                const mealOrder = ["Café da Manhã", "Lanche da Manhã", "Almoço", "Café da Tarde", "Jantar", "Ceia / Lanche", "Outros"];
                 const groupedMeals = {};
                 
                 // Initialize groups
@@ -3638,12 +3668,20 @@
                 if (items.length > 0) {
                     // Group items by meal label
                     items.forEach(item => {
-                        const label = getMealLabel(item.time);
-                        // Safety check for unknown labels (though getMealLabel covers it)
+                        const label = getMealLabel(item);
+                        // Safety check for unknown labels
                         if (!groupedMeals[label]) {
-                             groupedMeals[label] = { items: [], totals: { kcal: 0, p: 0, c: 0, f: 0 } };
-                             // Add to order if not present? Or just treat as extra. 
-                             // Ideally getMealLabel returns one of the fixed set.
+                             // If label is not in standard list, add it dynamically or put in Outros
+                             if (!groupedMeals["Outros"]) groupedMeals["Outros"] = { items: [], totals: { kcal: 0, p: 0, c: 0, f: 0 } };
+                             groupedMeals["Outros"].items.push(item);
+                             
+                             // Aggregate totals for Outros
+                             const t = item.totals || { kcal: 0, p: 0, c: 0, f: 0 };
+                             groupedMeals["Outros"].totals.kcal += (t.kcal || 0);
+                             groupedMeals["Outros"].totals.p += (t.p || 0);
+                             groupedMeals["Outros"].totals.c += (t.c || 0);
+                             groupedMeals["Outros"].totals.f += (t.f || 0);
+                             return;
                         }
                         
                         groupedMeals[label].items.push(item);
