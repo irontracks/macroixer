@@ -3563,6 +3563,21 @@
                 
                 // Helper to guess meal name based on time
                 const getMealLabel = (item) => {
+                    // 1. Prioritize explicit name keywords (case insensitive)
+                    const name = (item.name || "").toLowerCase().trim();
+                    if (name.includes("café da manhã") || name.includes("pequeno almoço") || name.includes("cafe da manha")) return "Café da Manhã";
+                    if (name.includes("lanche da manhã") || name.includes("lanche manha")) return "Lanche da Manhã";
+                    if (name.includes("almoço") || name.includes("almoco")) return "Almoço";
+                    if (name.includes("café da tarde") || name.includes("cafe da tarde") || name.includes("lanche da tarde")) return "Café da Tarde";
+                    if (name.includes("jantar") || name.includes("janta")) return "Jantar";
+                    if (name.includes("ceia")) return "Ceia / Lanche";
+                    
+                    // 2. If it has a specific custom name (not generic "Refeição"), use it as category
+                    if (item.name && item.name !== "Refeição" && item.name.trim() !== "") {
+                        return item.name;
+                    }
+
+                    // 3. Fallback to time-based for generic "Refeição"
                     let hour;
                     // Priority: item.time (HH:MM) -> item.timestamp (ISO)
                     if (item.time && typeof item.time === 'string' && item.time.includes(':')) {
@@ -3696,8 +3711,14 @@
                     
                     let hasMeals = false;
 
+                    // Combine standard order with any custom labels found
+                    const allLabels = [...mealOrder];
+                    Object.keys(groupedMeals).forEach(key => {
+                        if (!allLabels.includes(key)) allLabels.push(key);
+                    });
+
                     // Render groups
-                    mealOrder.forEach(mealLabel => {
+                    allLabels.forEach(mealLabel => {
                         const group = groupedMeals[mealLabel];
                         if (!group || group.items.length === 0) return;
                         
