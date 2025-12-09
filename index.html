@@ -262,14 +262,6 @@
                     </div>
                 </div>
                 <button type="submit" class="w-full bg-cyan-700 hover:bg-cyan-600 text-white font-bold py-3 rounded transition-all uppercase tracking-wider text-sm shadow-lg shadow-cyan-900/50">Salvar Calibragem</button>
-                
-                <!-- Clear Cache Button -->
-                <button type="button" id="clear-cache-btn" class="w-full bg-red-700 hover:bg-red-600 text-white font-bold py-2 rounded transition-all uppercase tracking-wider text-xs mt-2">
-                    <i class="fa-solid fa-trash-can mr-1"></i> Limpar Cache & Atualizar
-                </button>
-                <button type="button" onclick="debugApp()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-2 rounded transition-all uppercase tracking-wider text-xs mt-2">
-                    <i class="fa-solid fa-bug mr-1"></i> Debug Info
-                </button>
             </form>
         </section>
 
@@ -1033,8 +1025,7 @@
         let notificationIntervals = [];
         let waterGoal = 3000; // Meta padrão: 3L
         let isDarkMode = true; // Tema padrão: escuro
-        let weightHistory = []; // Histórico de peso
-        let weightChart = null; // Gráfico de peso
+        // Weight variables removed
         let currentMealPhoto = null; // Foto temporária da refeição
         let favoriteMeals = []; // Refeições favoritas
         let macrosChart = null; // Gráfico de distribuição de macros
@@ -2112,156 +2103,7 @@
             }
         }
 
-        // ==================== REGISTRO DE PESO ====================
-        async function saveWeight() {
-            const weightInput = document.getElementById('weight-input');
-            const weight = parseFloat(weightInput.value);
-            
-            if (!weight || weight < 30 || weight > 300) {
-                alert('Por favor, insira um peso válido (30-300kg)');
-                return;
-            }
-            
-            const today = getLocalISODate(new Date());
-            const entry = { date: today, weight: weight };
-            
-            // Salva no Firebase ou localStorage
-            if (!currentUser || useLocalStorage) {
-                let history = JSON.parse(localStorage.getItem('macromixer_weight_history') || '[]');
-                // Remove entrada do mesmo dia se existir
-                history = history.filter(e => e.date !== today);
-                history.push(entry);
-                history.sort((a, b) => new Date(a.date) - new Date(b.date));
-                localStorage.setItem('macromixer_weight_history', JSON.stringify(history));
-                weightHistory = history;
-            } else {
-                try {
-                    const docRef = doc(db, 'users', currentUser.uid, 'weight_history', today);
-                    await setDoc(docRef, entry);
-                    await loadWeightHistory();
-                } catch (error) {
-                    console.error('Erro ao salvar peso:', error);
-                    alert('Erro ao salvar peso. Tente novamente.');
-                    return;
-                }
-            }
-            
-            weightInput.value = '';
-            updateWeightDisplay();
-            alert('✅ Peso registrado com sucesso!');
-        }
-
-        async function loadWeightHistory() {
-            if (!currentUser || useLocalStorage) {
-                weightHistory = JSON.parse(localStorage.getItem('macromixer_weight_history') || '[]');
-            } else {
-                try {
-                    const collectionRef = collection(db, 'users', currentUser.uid, 'weight_history');
-                    const querySnapshot = await getDocs(collectionRef);
-                    weightHistory = [];
-                    querySnapshot.forEach((doc) => {
-                        weightHistory.push(doc.data());
-                    });
-                    weightHistory.sort((a, b) => new Date(a.date) - new Date(b.date));
-                } catch (error) {
-                    console.error('Erro ao carregar histórico de peso:', error);
-                }
-            }
-            updateWeightDisplay();
-        }
-
-        function updateWeightDisplay() {
-            // Elemento removido na v3.2.2 - função desabilitada
-            const weightInfoEl = document.getElementById('weight-info');
-            if (!weightInfoEl) return;
-            
-            if (weightHistory.length === 0) {
-                weightInfoEl.innerHTML = '<i class="fa-solid fa-info-circle mr-1"></i>Registre seu peso diariamente';
-                return;
-            }
-            
-            const latest = weightHistory[weightHistory.length - 1];
-            const initial = weightHistory[0];
-            const diff = latest.weight - initial.weight;
-            
-            weightInfoEl.innerHTML = `<i class="fa-solid fa-check-circle mr-1 text-green-400"></i><span class="text-green-400">Último: ${latest.weight}kg em ${new Date(latest.date).toLocaleDateString('pt-BR')}</span>`;
-            
-            // Atualiza stats
-            document.getElementById('weight-initial').innerText = initial.weight + 'kg';
-            document.getElementById('weight-current').innerText = latest.weight + 'kg';
-            
-            const diffEl = document.getElementById('weight-diff');
-            if (diff > 0) {
-                diffEl.innerText = '+' + diff.toFixed(1) + 'kg';
-                diffEl.className = 'font-bold text-red-400';
-            } else if (diff < 0) {
-                diffEl.innerText = diff.toFixed(1) + 'kg';
-                diffEl.className = 'font-bold text-green-400';
-            } else {
-                diffEl.innerText = '0kg';
-                diffEl.className = 'font-bold text-slate-400';
-            }
-        }
-
-        function toggleWeightChart() {
-            const container = document.getElementById('weight-chart-container');
-            container.classList.toggle('hidden');
-            
-            if (!container.classList.contains('hidden')) {
-                renderWeightChart();
-            }
-        }
-
-        function renderWeightChart() {
-            if (weightHistory.length === 0) {
-                return;
-            }
-            
-            const ctx = document.getElementById('weight-chart').getContext('2d');
-            
-            if (weightChart) {
-                weightChart.destroy();
-            }
-            
-            const labels = weightHistory.map(e => new Date(e.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }));
-            const data = weightHistory.map(e => e.weight);
-            
-            weightChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Peso (kg)',
-                        data: data,
-                        borderColor: 'rgb(168, 85, 247)',
-                        backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 4,
-                        pointHoverRadius: 6
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: false,
-                            ticks: {
-                                callback: function(value) {
-                                    return value + 'kg';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
+        // Weight functions removed
 
         // ==================== REFEIÇÕES FAVORITAS ====================
         async function loadFavoriteMeals() {
@@ -2811,26 +2653,7 @@
             }
         }
 
-        // --- DEBUG FUNCTION ---
-        window.debugApp = function() {
-            const today = new Date();
-            const iso = getLocalISODate(today);
-            const lsKey = `macromixer_log_${iso}`;
-            const lsData = localStorage.getItem(lsKey);
-            
-            const info = `
-            === DEBUG INFO ===
-            User Agent: ${navigator.userAgent}
-            Time: ${today.toLocaleTimeString()}
-            Local ISO: ${iso}
-            LS Key: ${lsKey}
-            LS Data Length: ${lsData ? lsData.length : 'NULL'}
-            Items: ${dailyLog.items.length}
-            Total: ${JSON.stringify(dailyLog.total)}
-            `;
-            alert(info);
-            console.log(info);
-        }
+        // Debug function removed
 
         // --- MULTI-DAY HISTORY FUNCTIONS ---
         function formatDateDisplay(date) {
@@ -4212,38 +4035,7 @@
         document.getElementById('edit-goals-btn').addEventListener('click', () => document.getElementById('goals-section').classList.remove('hidden'));
         document.getElementById('close-goals-btn').addEventListener('click', (e) => { e.preventDefault(); document.getElementById('goals-section').classList.add('hidden'); });
         
-        // Clear Cache Button
-        document.getElementById('clear-cache-btn').addEventListener('click', async () => {
-            if (!confirm('⚠️ Isso vai limpar todo o cache e recarregar o app. Seus dados salvos NÃO serão perdidos. Continuar?')) return;
-            
-            try {
-                // Clear all caches
-                if ('caches' in window) {
-                    const cacheNames = await caches.keys();
-                    await Promise.all(cacheNames.map(name => caches.delete(name)));
-                    console.log('✅ Cache limpo:', cacheNames);
-                }
-                
-                // Unregister all service workers
-                if ('serviceWorker' in navigator) {
-                    const registrations = await navigator.serviceWorker.getRegistrations();
-                    await Promise.all(registrations.map(reg => reg.unregister()));
-                    console.log('✅ Service Workers removidos:', registrations.length);
-                }
-                
-                // Clear session storage
-                sessionStorage.clear();
-                console.log('✅ Session Storage limpo');
-                
-                alert('✅ Cache limpo com sucesso! O app será recarregado.');
-                
-                // Force reload from server
-                window.location.reload(true);
-            } catch (error) {
-                console.error('❌ Erro ao limpar cache:', error);
-                alert('❌ Erro ao limpar cache. Tente fechar e reabrir o app.');
-            }
-        });
+        // Clear Cache Button removed
         document.getElementById('btn-calculate').addEventListener('click', handleCalculate);
         document.getElementById('close-modal').addEventListener('click', () => document.getElementById('modal-result').classList.add('hidden'));
         document.getElementById('confirm-meal').addEventListener('click', pushMealToDB);
@@ -4396,7 +4188,6 @@
         updateDateDisplay();
         loadNotificationSettings();
         startNotificationScheduler();
-        loadWeightHistory();
         loadFavoriteMeals();
         loadAchievements();
         renderAchievements();
@@ -4419,7 +4210,6 @@
         // --- EXPOSE FUNCTIONS TO WINDOW (Fix for Module Scope) ---
         window.generateDailyReport = generateDailyReport;
         window.exportAsImage = exportAsImage;
-        window.debugApp = debugApp;
         
         // Register Service Worker (PWA) with forced update
         if ('serviceWorker' in navigator) {
